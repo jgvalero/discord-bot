@@ -31,6 +31,9 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
+# Values
+queue = []
+
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -85,24 +88,46 @@ class Music(commands.Cog):
         """Plays from a url (almost anything youtube_dl supports)"""
 
         async with ctx.typing():
+            # Get the song
             player = await YTDLSource.from_url(url, loop=self.bot.loop)
+            queue.append(player)
+
+            # Check if there is a song playing
+            if ctx.voice_client.is_playing():
+                return await ctx.send(f"Added {player.title} to queue!")
+
+            # Play the song and check queue after
             ctx.voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}") if e else None
+                queue[0],
+                after=lambda e: print(f"Player error: {e}")
+                if e
+                else self.check_queue(ctx),
             )
 
-        await ctx.send(f"Now playing: {player.title}")
+        await ctx.send(f"Now playing: {queue[0].title}!")
 
     @commands.command()
     async def stream(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
         async with ctx.typing():
+            # Get the song
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            queue.append(player)
+
+            # Check if there is a song playing
+            if ctx.voice_client.is_playing():
+                return await ctx.send(f"Added {player.title} to queue!")
+
+            # Play the song and check queue after
             ctx.voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}") if e else None
+                queue[0],
+                after=lambda e: print(f"Player error: {e}")
+                if e
+                else self.check_queue(ctx),
             )
 
-        await ctx.send(f"Now playing: {player.title}")
+        await ctx.send(f"Now playing: {queue[0].title}!")
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -130,8 +155,57 @@ class Music(commands.Cog):
             else:
                 await ctx.send("You are not connected to a voice channel.")
                 raise commands.CommandError("Author not connected to a voice channel.")
-        elif ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
+        # elif ctx.voice_client.is_playing():
+        #     ctx.voice_client.stop()
+
+    # New Commands
+    @commands.command()
+    async def skip(self, ctx):
+        """Skips currently playing song"""
+        if not ctx.voice_client.is_playing():
+            return await ctx.send(f"There is no song playing!")
+
+        ctx.voice_client.stop()
+        await ctx.send(f"Skipped")
+
+    @commands.command()
+    async def pause(self, ctx):
+        """Pauses currently playing song"""
+        if ctx.voice_client.is_playing():
+            ctx.voice_client.pause()
+            await ctx.send(f"Paused")
+
+    @commands.command()
+    async def resume(self, ctx):
+        """Resumes currently paused song"""
+        if ctx.voice_client.is_paused():
+            ctx.voice_client.resume()
+            await ctx.send(f"Resumed")
+
+    @commands.command()
+    async def queue(self, ctx):
+        """Shows the music queue"""
+        if not queue:
+            return await ctx.send("The queue is empty!")
+
+        queue_str = f"#1: {queue[0].title} [Currently playing!]"
+
+        for i in range(1, len(queue)):
+            queue_str += f"\n#{i+1}: {queue[i].title}"
+
+        await ctx.send(queue_str)
+
+    # Functions
+    def check_queue(self, ctx):
+        queue.pop(0)
+
+        if queue:
+            ctx.voice_client.play(
+                queue[0],
+                after=lambda e: print(f"Player error: {e}")
+                if e
+                else self.check_queue(ctx),
+            )
 
 
 async def setup(bot):

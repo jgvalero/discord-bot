@@ -7,16 +7,13 @@ import os
 import asyncio
 import json
 
-description = """An example bot to showcase the discord.ext.commands extension
-module.
-
-There are a number of utility commands being showcased here."""
+description = """Discord bot made by jgvalero! Work in progress..."""
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="?", description=description, intents=intents)
+bot = commands.Bot(command_prefix="$", description=description, intents=intents)
 
 
 # Load all cogs in cogs folder
@@ -85,6 +82,14 @@ async def cool(ctx):
 async def _bot(ctx):
     """Is the bot cool?"""
     await ctx.send("Yes, the bot is cool.")
+
+
+# New Commands
+@bot.command()
+async def reload(ctx, extension):
+    """Reloads cogs"""
+    await bot.reload_extension(f"cogs.{extension}")
+    await ctx.send(f"Reloaded {extension}!")
 
 
 async def main():
