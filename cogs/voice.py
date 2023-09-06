@@ -3,12 +3,12 @@
 import asyncio
 
 import discord
-import youtube_dl
+import yt_dlp
 
 from discord.ext import commands
 
 # Suppress noise about console usage from errors
-youtube_dl.utils.bug_reports_message = lambda: ""
+yt_dlp.utils.bug_reports_message = lambda: ""
 
 
 ytdl_format_options = {
@@ -29,7 +29,7 @@ ffmpeg_options = {
     "options": "-vn",
 }
 
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 # Values
 queue = []
@@ -85,7 +85,7 @@ class Music(commands.Cog):
 
     @commands.command()
     async def yt(self, ctx, *, url):
-        """Plays from a url (almost anything youtube_dl supports)"""
+        """Plays from a url (almost anything yt_dlp supports)"""
 
         async with ctx.typing():
             # Get the song
@@ -107,7 +107,7 @@ class Music(commands.Cog):
         await ctx.send(f"Now playing: {queue[0].title}!")
 
     @commands.command()
-    async def stream(self, ctx, *, url):
+    async def stream(self, ctx, *url: str):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
         async with ctx.typing():
