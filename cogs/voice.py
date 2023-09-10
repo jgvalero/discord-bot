@@ -36,7 +36,7 @@ queue = []
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
+    def __init__(self, source, *, data, volume=0.2):
         super().__init__(source, volume)
 
         self.data = data
@@ -73,7 +73,7 @@ class Music(commands.Cog):
         await channel.connect()
 
     @commands.command()
-    async def play(self, ctx, *, query):
+    async def play_file(self, ctx, *, query):
         """Plays a file from the local filesystem"""
 
         source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
@@ -84,7 +84,7 @@ class Music(commands.Cog):
         await ctx.send(f"Now playing: {query}")
 
     @commands.command()
-    async def yt(self, ctx, *, url):
+    async def play(self, ctx, *, url):
         """Plays from a url (almost anything yt_dlp supports)"""
 
         async with ctx.typing():
@@ -107,7 +107,7 @@ class Music(commands.Cog):
         await ctx.send(f"Now playing: {queue[0].title}!")
 
     @commands.command()
-    async def stream(self, ctx, *url: str):
+    async def stream(self, ctx, *, url):
         """Streams from a url (same as yt, but doesn't predownload)"""
 
         async with ctx.typing():
@@ -145,8 +145,8 @@ class Music(commands.Cog):
 
         await ctx.voice_client.disconnect()
 
+    @play_file.before_invoke
     @play.before_invoke
-    @yt.before_invoke
     @stream.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
