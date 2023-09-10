@@ -99,7 +99,7 @@ async def main():
 
     async with bot:
         await load_cogs()
-        await bot.start(parsed_json["token"])
+        await bot.start(parsed_json["discord_token"])
 
 
 asyncio.run(main())

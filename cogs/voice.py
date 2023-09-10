@@ -4,13 +4,13 @@ import asyncio
 
 import discord
 import yt_dlp
+import lyricsgenius
+import json
 
 from discord.ext import commands
 
 # Suppress noise about console usage from errors
 yt_dlp.utils.bug_reports_message = lambda: ""
-
-
 ytdl_format_options = {
     "format": "bestaudio/best",
     "outtmpl": "./data/music/%(extractor)s-%(id)s-%(title)s.%(ext)s",
@@ -24,15 +24,15 @@ ytdl_format_options = {
     "default_search": "auto",
     "source_address": "0.0.0.0",  # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
-
 ffmpeg_options = {
     "options": "-vn",
 }
-
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
-# Values
 queue = []
+with open("config.json") as config_file:
+    parsed_json = json.load(config_file)
+genius = lyricsgenius.Genius(parsed_json["genius_token"])
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -194,6 +194,11 @@ class Music(commands.Cog):
             queue_str += f"\n#{i+1}: {queue[i].title}"
 
         await ctx.send(queue_str)
+
+    @commands.command()
+    async def lyrics(self, ctx, *, query):
+        [artist, song] = query.split(" - ")
+        await ctx.send(genius.search_song(song, artist).lyrics)
 
     # Functions
     def check_queue(self, ctx):
