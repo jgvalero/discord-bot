@@ -14,6 +14,10 @@ source bot-env/bin/activate
 Note: To exit the virtual environment, type `deactivate`.
 
 ### Install necessary packages
+Install FFmpeg. On Ubuntu/Debian it can be installed using:
+```bash
+sudo apt install ffmpeg
+```
 With the virtual environment activated, install the required packages from the ```requirements.txt``` file.
 ```bash
 pip install -r requirements.txt
@@ -24,4 +28,4 @@ Rename `example_config.json` to `config.json` or create a new file and paste the
 Acquire your tokens from Discord and Genius and paste them respectively.
 
 ## Run the Program
-To run the program, make sure the virtual environment is activated and type `python3 main.py`
+To run the program, make sure the virtual environment is activated and type `python3 main.py`.
