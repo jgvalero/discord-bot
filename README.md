@@ -29,3 +29,6 @@ Acquire your tokens from Discord and Genius and paste them respectively.
 
 ## Run the Program
 To run the program, make sure the virtual environment is activated and type `python3 main.py`.
+
+### Optional configurations
+You can make `blacklisted_words.txt` in the `data` directory that contains blacklisted words for your server.
