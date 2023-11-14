@@ -160,8 +160,9 @@ cython_debug/
 #.idea/
 
 # Project
-data/
+data/music/
 .vscode/
 bot-env/
 config.json
 .DS_Store
+data/blacklisted_words.txt

@@ -1,6 +1,3 @@
-# TAKEN FROM https://github.com/Rapptz/discord.py/blob/v2.3.2/examples/basic_bot.py TO USE AS EXAMPLE (UNDER MIT LICENSE)
-# TO DO: Valorant API Integration
-
 import discord
 from discord.ext import commands
 import random
