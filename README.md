@@ -31,4 +31,5 @@ Acquire your tokens from Discord and Genius and paste them respectively.
 To run the program, make sure the virtual environment is activated and type `python3 main.py`.
 
 ### Optional configurations
-You can make `blacklisted_words.txt` in the `data` directory that contains blacklisted words for your server.
+You can make `blacklisted_words.txt` in the `data` directory that contains blacklisted words for your server. Check out the example!
+You can make `example_trivia_questions.json` in the `data` directory that contains trivia questions for your server. Check out the example!

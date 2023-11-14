@@ -1,0 +1,38 @@
+[
+    {
+        "question": "What is 9+10?",
+        "choices": [
+            "19",
+            "20",
+            "21"
+        ],
+        "answer": [
+            3,
+            "21"
+        ]
+    },
+    {
+        "question": "What do you get when you mix red and blue?",
+        "choices": [
+            "Pink",
+            "Purple",
+            "Orange"
+        ],
+        "answer": [
+            2,
+            "Purple"
+        ]
+    },
+    {
+        "question": "If you had 60 seconds to live, who would you call?",
+        "choices": [
+            "Mom",
+            "Dad",
+            "Your mom"
+        ],
+        "answer": [
+            3,
+            "Your mom"
+        ]
+    }
+]
