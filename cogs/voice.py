@@ -9,6 +9,8 @@ import json
 
 from discord.ext import commands
 
+from utils.voting import Voting
+
 # Suppress noise about console usage from errors
 yt_dlp.utils.bug_reports_message = lambda: ""
 ytdl_format_options = {
@@ -29,7 +31,6 @@ ffmpeg_options = {
 }
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
-queue = []
 with open("config.json") as config_file:
     parsed_json = json.load(config_file)
 genius = lyricsgenius.Genius(parsed_json["genius_token"])
@@ -62,6 +63,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.voting = Voting()
+        self.song_queue = []
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -90,7 +93,8 @@ class Music(commands.Cog):
         async with ctx.typing():
             # Get the song
             player = await YTDLSource.from_url(url, loop=self.bot.loop)
-            queue.append(player)
+            player.author = ctx.author
+            self.song_queue.append(player)
 
             # Check if there is a song playing
             if ctx.voice_client.is_playing():
@@ -98,13 +102,13 @@ class Music(commands.Cog):
 
             # Play the song and check queue after
             ctx.voice_client.play(
-                queue[0],
+                self.song_queue[0],
                 after=lambda e: print(f"Player error: {e}")
                 if e
                 else self.check_queue(ctx),
             )
 
-        await ctx.send(f"Now playing: {queue[0].title}!")
+        await ctx.send(f"Now playing: {self.song_queue[0].title}!")
 
     @commands.command()
     async def stream(self, ctx, *, url):
@@ -113,7 +117,7 @@ class Music(commands.Cog):
         async with ctx.typing():
             # Get the song
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            queue.append(player)
+            self.song_queue.append(player)
 
             # Check if there is a song playing
             if ctx.voice_client.is_playing():
@@ -121,13 +125,13 @@ class Music(commands.Cog):
 
             # Play the song and check queue after
             ctx.voice_client.play(
-                queue[0],
+                self.song_queue[0],
                 after=lambda e: print(f"Player error: {e}")
                 if e
                 else self.check_queue(ctx),
             )
 
-        await ctx.send(f"Now playing: {queue[0].title}!")
+        await ctx.send(f"Now playing: {self.song_queue[0].title}!")
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -165,8 +169,27 @@ class Music(commands.Cog):
         if not ctx.voice_client.is_playing():
             return await ctx.send(f"There is no song playing!")
 
-        ctx.voice_client.stop()
-        await ctx.send(f"Skipped")
+        # Get number of people in the voice channel
+        num_people = len(ctx.voice_client.channel.members)
+        self.voting.requiredVotes = num_people // 2
+
+        # Check if the user is the one who requested the song
+        if ctx.author == self.song_queue[0].author:
+            ctx.voice_client.stop()
+            await ctx.send(f"Skipped [by requester]!")
+        else:
+            # Check if the user has already voted
+            if self.voting.addVote(ctx.author):
+                await ctx.send(
+                    f"Current votes: {self.voting.currentVotes}/{self.voting.requiredVotes}"
+                )
+            else:
+                await ctx.send(f"You already voted!")
+
+            # Check if the vote is done
+            if self.voting.isDone():
+                ctx.voice_client.stop()
+                await ctx.send(f"Skipped [by vote]!")
 
     @commands.command()
     async def pause(self, ctx):
@@ -185,13 +208,13 @@ class Music(commands.Cog):
     @commands.command()
     async def queue(self, ctx):
         """Shows the music queue"""
-        if not queue:
+        if not self.song_queue:
             return await ctx.send("The queue is empty!")
 
-        queue_str = f"#1: {queue[0].title} [Currently playing!]"
+        queue_str = f"#1: {self.song_queue[0].title} requested by {self.song_queue[0].author} [Currently playing!]"
 
-        for i in range(1, len(queue)):
-            queue_str += f"\n#{i+1}: {queue[i].title}"
+        for i in range(1, len(self.song_queue)):
+            queue_str += f"\n#{i+1}: {self.song_queue[i].title} requested by {self.song_queue[0].author}"
 
         await ctx.send(queue_str)
 
@@ -202,11 +225,11 @@ class Music(commands.Cog):
 
     # Functions
     def check_queue(self, ctx):
-        queue.pop(0)
+        self.song_queue.pop(0)
 
-        if queue:
+        if self.song_queue:
             ctx.voice_client.play(
-                queue[0],
+                self.song_queue[0],
                 after=lambda e: print(f"Player error: {e}")
                 if e
                 else self.check_queue(ctx),
