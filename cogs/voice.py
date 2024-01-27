@@ -214,7 +214,7 @@ class Music(commands.Cog):
         queue_str = f"#1: {self.song_queue[0].title} requested by {self.song_queue[0].author} [Currently playing!]"
 
         for i in range(1, len(self.song_queue)):
-            queue_str += f"\n#{i+1}: {self.song_queue[i].title} requested by {self.song_queue[0].author}"
+            queue_str += f"\n#{i+1}: {self.song_queue[i].title} requested by {self.song_queue[i].author}"
 
         await ctx.send(queue_str)
 
