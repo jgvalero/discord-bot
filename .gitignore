@@ -167,3 +167,4 @@ config.json
 .DS_Store
 data/blacklisted_words.txt
 data/trivia_questions.json
+data/users.json
