@@ -113,12 +113,11 @@ class Cookies(commands.Cog):
                 await ctx.send(f"{member.mention} did not respond in time.")
                 return None
 
-        choice1 = await get_choice(ctx.author)
-        if choice1 is None:
-            return
+        choice1, choice2 = await asyncio.gather(
+            get_choice(ctx.author), get_choice(member)
+        )
 
-        choice2 = await get_choice(member)
-        if choice2 is None:
+        if choice1 is None or choice2 is None:
             return
 
         choices = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
