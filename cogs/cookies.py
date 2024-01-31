@@ -1,7 +1,10 @@
+import math
 import discord
 from discord.ext import commands
 
 import sqlite3
+import random
+import asyncio
 
 
 class Cookies(commands.Cog):
@@ -109,96 +112,102 @@ class Cookies(commands.Cog):
         self.set_cookies(member.id, ctx.guild.id, amount)
         await ctx.send(f"{member.mention} now has {amount} cookies!")
 
-    # @commands.command()
-    # async def fish(self, ctx):
-    #     user_id = str(ctx.author.id)
-    #     num = random.randint(0, 9)
-    #     if num == 0:
-    #         self.users[user_id].cookies += 1
-    #         await ctx.send(f"You caught a fish ({ctx.author.mention})!")
-    #     else:
-    #         await ctx.send("Tough luck!")
-    #     self.save_users()
+    @commands.command()
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def fish(self, ctx):
+        """Fish!"""
+        if random.randint(1, 1) == 1:
+            fish_value = int((random.random() ** 2) * 100) + 1
+            user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
+            self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies + fish_value)
+            await ctx.send(
+                f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
+            )
+        else:
+            await ctx.send("Tough luck!")
 
-    # @commands.command()
-    # async def mute(self, ctx, member: discord.Member):
-    #     """Mutes a user for 10 seconds! Costs 1 cookie!"""
-    #     user_id = str(ctx.author.id)
-    #     if self.users[user_id].cookies < 1:
-    #         await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
-    #         return
-    #     self.users[user_id].cookies -= 1
-    #     await member.edit(mute=True)
-    #     await asyncio.sleep(10)
-    #     await member.edit(mute=False)
-    #     self.save_users()
+    @commands.command()
+    async def mute(self, ctx, member: discord.Member):
+        """Mutes a user for 10 seconds! Costs 1 cookie!"""
+        user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
+        if user_cookies < 1:
+            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
+            return
+        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 1)
+        await member.edit(mute=True)
+        await asyncio.sleep(10)
+        await member.edit(mute=False)
+        self.save_users()
 
-    # @commands.command()
-    # async def deafen(self, ctx, member: discord.Member):
-    #     """Deafens a user for 10 seconds! Costs 1 cookie!"""
-    #     user_id = str(ctx.author.id)
-    #     if self.users[user_id].cookies < 1:
-    #         await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
-    #         return
-    #     self.users[user_id].cookies -= 1
-    #     await member.edit(deafen=True)
-    #     await asyncio.sleep(10)
-    #     await member.edit(deafen=False)
-    #     self.save_users()
+    @commands.command()
+    async def deafen(self, ctx, member: discord.Member):
+        """Deafens a user for 10 seconds! Costs 1 cookie!"""
+        user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
+        if user_cookies < 1:
+            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
+            return
+        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 1)
+        await member.edit(deafen=True)
+        await asyncio.sleep(10)
+        await member.edit(deafen=False)
+        self.save_users()
 
-    # @commands.command()
-    # async def rps(self, ctx, member: discord.Member, wager: int):
-    #     """Play rock-paper-scissors with another user!"""
-    #     if (
-    #         self.users[str(ctx.author.id)].cookies < wager
-    #         or self.users[str(member.id)].cookies < wager
-    #     ):
-    #         await ctx.send(
-    #             "One or both users do not have enough cookies to make this wager!"
-    #         )
-    #         return
+    @commands.command()
+    async def rps(self, ctx, member: discord.Member, wager: int):
+        """Play rock-paper-scissors with another user!"""
+        author_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
+        member_cookies = self.get_cookies(member.id, ctx.guild.id)
+        if author_cookies < wager or member_cookies < wager:
+            return await ctx.send(
+                "One or both users do not have enough cookies to make this wager!"
+            )
 
-    #     await ctx.author.send("Please reply with 'rock', 'paper', or 'scissors'.")
-    #     await member.send("Please reply with 'rock', 'paper', or 'scissors'.")
+        await ctx.author.send("Please reply with 'rock', 'paper', or 'scissors'.")
+        await member.send("Please reply with 'rock', 'paper', or 'scissors'.")
 
-    #     def check(m, member):
-    #         return m.author == member and m.content in ["rock", "paper", "scissors"]
+        def check(m, member):
+            return m.author == member and m.content in ["rock", "paper", "scissors"]
 
-    #     async def get_choice(member):
-    #         try:
-    #             msg = await self.bot.wait_for(
-    #                 "message", check=lambda m: check(m, member), timeout=60.0
-    #             )
-    #             return msg.content
-    #         except asyncio.TimeoutError:
-    #             await ctx.send(f"{member.mention} did not respond in time!")
-    #             return None
+        async def get_choice(member):
+            try:
+                msg = await self.bot.wait_for(
+                    "message", check=lambda m: check(m, member), timeout=60.0
+                )
+                return msg.content
+            except asyncio.TimeoutError:
+                await ctx.send(f"{member.mention} did not respond in time!")
+                return None
 
-    #     choice1, choice2 = await asyncio.gather(
-    #         get_choice(ctx.author), get_choice(member)
-    #     )
+        choice1, choice2 = await asyncio.gather(
+            get_choice(ctx.author), get_choice(member)
+        )
 
-    #     if choice1 is None or choice2 is None:
-    #         return
+        if choice1 is None or choice2 is None:
+            return
 
-    #     choices = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
-    #     if choices[choice1] == choice2:
-    #         winner = ctx.author
-    #         loser = member
-    #     elif choices[choice2] == choice1:
-    #         winner = member
-    #         loser = ctx.author
-    #     else:
-    #         await ctx.send("It's a draw!")
-    #         return
+        await ctx.send(f"{ctx.author.mention} chose {choice1}!")
+        await member.send(f"{member.mention} chose {choice2}!")
 
-    #     self.users[str(winner.id)].cookies += wager
-    #     self.users[str(loser.id)].cookies -= wager
-    #     self.save_users()
+        choices = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
+        if choices[choice1] == choice2:
+            winner = ctx.author
+            loser = member
+        elif choices[choice2] == choice1:
+            winner = member
+            loser = ctx.author
+        else:
+            await ctx.send(f"It's a draw!")
+            return
 
-    #     await ctx.send(
-    #         f"{winner.mention} wins and receives {wager} cookies from {loser.mention}!"
-    #     )
+        winner_cookies = self.get_cookies(winner.id, ctx.guild.id)
+        self.set_cookies(winner.id, ctx.guild.id, winner_cookies + wager)
+
+        loser_cookies = self.get_cookies(loser.id, ctx.guild.id)
+        self.set_cookies(loser.id, ctx.guild.id, loser_cookies - wager)
+
+        await ctx.send(
+            f"{winner.mention} wins and receives {wager} cookies from {loser.mention}!"
+        )
 
 
 async def setup(bot):
