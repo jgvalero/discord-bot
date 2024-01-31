@@ -52,7 +52,7 @@ class Cookies(commands.Cog):
         print(num)
         if num == 0:
             self.users[user_id].cookies += 1
-            await ctx.send("You caught a fish!")
+            await ctx.send(f"You caught a fish ({ctx.author.mention})!")
         else:
             await ctx.send("Tough luck!")
         self.save_users()
@@ -68,7 +68,7 @@ class Cookies(commands.Cog):
     async def mute(self, ctx, member: discord.Member):
         user_id = str(ctx.author.id)
         if self.users[user_id].cookies < 1:
-            await ctx.send("You don't have enough cookies!")
+            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
             return
         self.users[user_id].cookies -= 1
         await member.edit(mute=True)
@@ -80,7 +80,7 @@ class Cookies(commands.Cog):
     async def deafen(self, ctx, member: discord.Member):
         user_id = str(ctx.author.id)
         if self.users[user_id].cookies < 1:
-            await ctx.send("You don't have enough cookies!")
+            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
             return
         self.users[user_id].cookies -= 1
         await member.edit(deafen=True)
@@ -95,7 +95,7 @@ class Cookies(commands.Cog):
             or self.users[str(member.id)].cookies < wager
         ):
             await ctx.send(
-                "One or both users do not have enough cookies to make this wager."
+                "One or both users do not have enough cookies to make this wager!"
             )
             return
 
@@ -112,7 +112,7 @@ class Cookies(commands.Cog):
                 )
                 return msg.content
             except asyncio.TimeoutError:
-                await ctx.send(f"{member.mention} did not respond in time.")
+                await ctx.send(f"{member.mention} did not respond in time!")
                 return None
 
         choice1, choice2 = await asyncio.gather(
@@ -145,7 +145,9 @@ class Cookies(commands.Cog):
     async def give(self, ctx, recipient: discord.Member, amount: int):
         sender_id = str(ctx.author.id)
         if self.users[sender_id].cookies < amount:
-            await ctx.send("You do not have enough cookies to make this transfer.")
+            await ctx.send(
+                f"You do not have enough cookies to make this transfer ({ctx.author.mention})!"
+            )
             return
 
         recipient_id = str(recipient.id)
