@@ -168,3 +168,4 @@ config.json
 data/blacklisted_words.txt
 data/trivia_questions.json
 data/users.json
+data/users.db
