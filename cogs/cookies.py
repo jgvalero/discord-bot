@@ -60,7 +60,9 @@ class Cookies(commands.Cog):
     @commands.command()
     async def cookies(self, ctx):
         user_id = str(ctx.author.id)
-        await ctx.send(f"You have {self.users[user_id].cookies} cookies!")
+        await ctx.send(
+            f"{ctx.author.mention} has {self.users[user_id].cookies} cookies!"
+        )
 
     @commands.command()
     async def mute(self, ctx, member: discord.Member):
