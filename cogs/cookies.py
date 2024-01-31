@@ -128,12 +128,12 @@ class Cookies(commands.Cog):
 
     @commands.command()
     async def mute(self, ctx, member: discord.Member):
-        """Mutes a user for 10 seconds! Costs 1 cookie!"""
+        """Mutes a user for 10 seconds! Costs 10 cookies!"""
         user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
-        if user_cookies < 1:
+        if user_cookies < 10:
             await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
             return
-        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 1)
+        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 10)
         await member.edit(mute=True)
         await asyncio.sleep(10)
         await member.edit(mute=False)
@@ -141,12 +141,12 @@ class Cookies(commands.Cog):
 
     @commands.command()
     async def deafen(self, ctx, member: discord.Member):
-        """Deafens a user for 10 seconds! Costs 1 cookie!"""
+        """Deafens a user for 10 seconds! Costs 10 cookies!"""
         user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
-        if user_cookies < 1:
+        if user_cookies < 10:
             await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
             return
-        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 1)
+        self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies - 10)
         await member.edit(deafen=True)
         await asyncio.sleep(10)
         await member.edit(deafen=False)
