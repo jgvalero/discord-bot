@@ -34,19 +34,31 @@ class Cookies(commands.Cog):
                 )
         self.conn.commit()
 
+    def get_cookies(self, user_id, guild_id):
+        self.cursor.execute(
+            """
+            SELECT cookies FROM users WHERE user_id = ? AND guild_id = ?
+            """,
+            (user_id, guild_id),
+        )
+        return self.cursor.fetchone()[0]
+
+    def set_cookies(self, user_id, guild_id, cookies):
+        self.cursor.execute(
+            """
+            UPDATE users SET cookies = ? WHERE user_id = ? AND guild_id = ?
+            """,
+            (cookies, user_id, guild_id),
+        )
+        self.conn.commit()
+
     @commands.command()
     async def cookies(self, ctx, member: discord.Member = None):
         """Check how many cookies you or another user have!"""
         if member is None:
             member = ctx.author
 
-        self.cursor.execute(
-            """
-            SELECT cookies FROM users WHERE user_id = ? AND guild_id = ?
-            """,
-            (member.id, ctx.guild.id),
-        )
-        cookies = self.cursor.fetchone()[0]
+        cookies = self.get_cookies(member.id, ctx.guild.id)
         await ctx.send(f"{member.name} has {cookies} cookies!")
 
     @commands.command()
@@ -78,32 +90,24 @@ class Cookies(commands.Cog):
                 "You can't give someone a negative amount of cookies!"
             )
 
-        self.cursor.execute(
-            """
-            SELECT cookies FROM users WHERE user_id = ? AND guild_id = ?
-            """,
-            (ctx.author.id, ctx.guild.id),
-        )
-        author_cookies = self.cursor.fetchone()[0]
+        author_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
 
         if author_cookies < amount:
             return await ctx.send("You do not have enough cookies to give!")
 
-        self.cursor.execute(
-            """
-            UPDATE users SET cookies = cookies - ? WHERE user_id = ? AND guild_id = ?
-            """,
-            (amount, ctx.author.id, ctx.guild.id),
-        )
+        self.set_cookies(ctx.author.id, ctx.guild.id, author_cookies - amount)
 
-        self.cursor.execute(
-            """
-            UPDATE users SET cookies = cookies + ? WHERE user_id = ? AND guild_id = ?
-            """,
-            (amount, member.id, ctx.guild.id),
-        )
+        member_cookies = self.get_cookies(member.id, ctx.guild.id)
+        self.set_cookies(member.id, ctx.guild.id, member_cookies + amount)
 
         await ctx.send(f"You gave {amount} cookies to {member.mention}!")
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def set(self, ctx, member: discord.Member, amount: int):
+        """Set the amount of cookies someone has!"""
+        self.set_cookies(member.id, ctx.guild.id, amount)
+        await ctx.send(f"{member.mention} now has {amount} cookies!")
 
     # @commands.command()
     # async def fish(self, ctx):
