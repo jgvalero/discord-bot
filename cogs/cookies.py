@@ -116,6 +116,13 @@ class Cookies(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def fish(self, ctx):
         """Fish!"""
+        message_content = f"{ctx.author.mention} is fishing"
+        message = await ctx.send(message_content)
+        for i in range(7):
+            await asyncio.sleep(1)
+            message_content += "."
+            await message.edit(content=message_content)
+        await asyncio.sleep(1)
         if random.randint(1, 10) == 1:
             fish_value = int((random.random() ** 2) * 100) + 1
             user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
@@ -124,7 +131,7 @@ class Cookies(commands.Cog):
                 f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
             )
         else:
-            await ctx.send("Tough luck!")
+            await ctx.send(f"Tough luck, {ctx.author.mention}!")
 
     @commands.command()
     async def mute(self, ctx, member: discord.Member):
