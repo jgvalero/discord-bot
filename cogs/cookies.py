@@ -116,7 +116,7 @@ class Cookies(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def fish(self, ctx):
         """Fish!"""
-        if random.randint(1, 1) == 1:
+        if random.randint(1, 10) == 1:
             fish_value = int((random.random() ** 2) * 100) + 1
             user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
             self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies + fish_value)
