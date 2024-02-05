@@ -72,9 +72,8 @@ class Database:
                 self.cursor.execute(
                     """
                     ALTER TABLE ? ADD COLUMN ? ? DEFAULT ?
-                    """(
-                        table_name, column_name, data_type, default_value
-                    )
+                    """,
+                    (table_name, column_name, data_type, default_value),
                 )
             else:
                 self.cursor.execute(
