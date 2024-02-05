@@ -12,7 +12,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER,
                 guild_id INTEGER,
-                cookies INTEGER,
+                cookies INTEGER DEFAULT 0,
                 most_valuable_fish INTEGER DEFAULT 0,
                 bait INTEGER DEFAULT 0,
                 PRIMARY KEY (user_id, guild_id)
@@ -53,3 +53,42 @@ class Database:
                 """
             )
         self.conn.commit()
+
+    def get_leaderboard(self, guild_id):
+        self.cursor.execute(
+            """
+            SELECT user_id, cookies FROM users WHERE guild_id = ?
+            ORDER BY cookies DESC
+            """,
+            (guild_id,),
+        )
+        return self.cursor.fetchall()
+
+    def create_user(self, member_id, guild_id):
+        self.cursor.execute(
+            """
+            INSERT OR IGNORE INTO users (user_id, guild_id)
+            VALUES (?, ?)
+            """,
+            (member_id, guild_id),
+        )
+
+    def column_exists(self, table_name, column_name):
+        self.cursor.execute(f"PRAGMA table_info({table_name})")
+        columns = [column[1] for column in self.cursor.fetchall()]
+        return column_name in columns
+
+    def update_database(self):
+        if not self.column_exists("users", "most_valuable_fish"):
+            self.add_column("users", "most_valuable_fish", "INTEGER", 0)
+        if not self.column_exists("users", "bait"):
+            self.add_column("users", "bait", "INTEGER", 0)
+        self.conn.commit()
+
+
+if __name__ == "__main__":
+    print("Setting up database...")
+    db = Database("data/users.db")
+    db.create_tables()
+    db.update_database()
+    print("Database setup complete.")
