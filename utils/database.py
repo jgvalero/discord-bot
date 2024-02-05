@@ -1,4 +1,23 @@
 import sqlite3
+import logging
+
+TABLE_USERS = "users"
+COLUMN_USER_ID = "user_id"
+COLUMN_GUILD_ID = "guild_id"
+COLUMN_COOKIES = "cookies"
+COLUMN_MOST_VALUABLE_FISH = "most_valuable_fish"
+COLUMN_BAIT = "bait"
+
+
+def handle_errors(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except sqlite3.Error as e:
+            logging.error(f"SQLite error: {e}")
+            raise
+
+    return wrapper
 
 
 class Database:
@@ -6,84 +25,106 @@ class Database:
         self.conn = sqlite3.connect(path)
         self.cursor = self.conn.cursor()
 
+    @handle_errors
     def create_tables(self):
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER,
-                guild_id INTEGER,
-                cookies INTEGER DEFAULT 0,
-                most_valuable_fish INTEGER DEFAULT 0,
-                bait INTEGER DEFAULT 0,
-                PRIMARY KEY (user_id, guild_id)
+        with self.conn:
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER,
+                    guild_id INTEGER,
+                    cookies INTEGER DEFAULT 0,
+                    most_valuable_fish INTEGER DEFAULT 0,
+                    bait INTEGER DEFAULT 0,
+                    PRIMARY KEY (user_id, guild_id)
+                )
+                """
             )
-            """
-        )
-        self.conn.commit()
 
+    @handle_errors
     def get_value(self, user_id, guild_id, column):
-        self.cursor.execute(
-            f"""
-            SELECT {column} FROM users WHERE user_id = ? AND guild_id = ?
-            """,
-            (user_id, guild_id),
-        )
-        return self.cursor.fetchone()[0]
+        with self.conn:
+            self.cursor.execute(
+                """
+                SELECT ? FROM users WHERE user_id = ? AND guild_id = ?
+                """,
+                (column, user_id, guild_id),
+            )
+            return self.cursor.fetchone()[0]
 
+    @handle_errors
     def set_value(self, user_id, guild_id, column, value):
-        self.cursor.execute(
-            f"""
-            UPDATE users SET {column} = ? WHERE user_id = ? AND guild_id = ?
-            """,
-            (value, user_id, guild_id),
-        )
-        self.conn.commit()
+        with self.conn:
+            self.cursor.execute(
+                """
+                UPDATE users SET ? = ? WHERE user_id = ? AND guild_id = ?
+                """,
+                (column, value, user_id, guild_id),
+            )
 
+    @handle_errors
     def add_column(self, table_name, column_name, data_type, default_value=None):
-        if default_value is not None:
-            self.cursor.execute(
-                f"""
-                ALTER TABLE {table_name} ADD COLUMN {column_name} {data_type} DEFAULT {default_value}
-                """
-            )
-        else:
-            self.cursor.execute(
-                f"""
-                ALTER TABLE {table_name} ADD COLUMN {column_name} {data_type}
-                """
-            )
-        self.conn.commit()
+        if not (self.is_valid_name(table_name) and self.is_valid_name(column_name)):
+            raise ValueError("Invalid table name or column name")
 
+        with self.conn:
+            if default_value is not None:
+                self.cursor.execute(
+                    """
+                    ALTER TABLE ? ADD COLUMN ? ? DEFAULT ?
+                    """(
+                        table_name, column_name, data_type, default_value
+                    )
+                )
+            else:
+                self.cursor.execute(
+                    """
+                    ALTER TABLE ? ADD COLUMN ? ?
+                    """,
+                    (table_name, column_name, data_type),
+                )
+
+    def is_valid_name(self, name):
+        """Checks if a name is valid (for use as a table name or column name)."""
+        return name.isidentifier()
+
+    @handle_errors
     def get_leaderboard(self, guild_id):
-        self.cursor.execute(
-            """
-            SELECT user_id, cookies FROM users WHERE guild_id = ?
-            ORDER BY cookies DESC
-            """,
-            (guild_id,),
-        )
-        return self.cursor.fetchall()
+        with self.conn:
+            self.cursor.execute(
+                """
+                SELECT user_id, cookies FROM users WHERE guild_id = ?
+                ORDER BY cookies DESC
+                """,
+                (guild_id,),
+            )
+            return self.cursor.fetchall()
 
+    @handle_errors
     def create_user(self, member_id, guild_id):
-        self.cursor.execute(
-            """
-            INSERT OR IGNORE INTO users (user_id, guild_id)
-            VALUES (?, ?)
-            """,
-            (member_id, guild_id),
-        )
+        with self.conn:
+            self.cursor.execute(
+                """
+                INSERT OR IGNORE INTO users (user_id, guild_id)
+                VALUES (?, ?)
+                """,
+                (member_id, guild_id),
+            )
 
+    @handle_errors
     def column_exists(self, table_name, column_name):
-        self.cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = [column[1] for column in self.cursor.fetchall()]
-        return column_name in columns
+        with self.conn:
+            self.cursor.execute(f"PRAGMA table_info({table_name})")
+            columns = [column[1] for column in self.cursor.fetchall()]
+            return column_name in columns
 
+    @handle_errors
     def update_database(self):
-        if not self.column_exists("users", "most_valuable_fish"):
-            self.add_column("users", "most_valuable_fish", "INTEGER", 0)
-        if not self.column_exists("users", "bait"):
-            self.add_column("users", "bait", "INTEGER", 0)
-        self.conn.commit()
+        self.add_column(TABLE_USERS, COLUMN_MOST_VALUABLE_FISH, "INTEGER", 0)
+        self.add_column(TABLE_USERS, COLUMN_BAIT, "INTEGER", 0)
+
+    def __del__(self):
+        self.conn.close()
 
 
 if __name__ == "__main__":

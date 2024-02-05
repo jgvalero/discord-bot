@@ -17,7 +17,6 @@ class Cookies(commands.Cog):
         for guild in self.bot.guilds:
             for member in guild.members:
                 self.db.create_user(member.id, guild.id)
-        self.conn.commit()
 
     @commands.command()
     async def cookies(self, ctx, member: discord.Member = None):
