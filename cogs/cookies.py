@@ -18,6 +18,7 @@ class Cookies(commands.Cog):
                 user_id INTEGER,
                 guild_id INTEGER,
                 cookies INTEGER,
+                most_valuable_fish INTEGER DEFAULT 0,
                 PRIMARY KEY (user_id, guild_id)
             )
             """
@@ -54,6 +55,15 @@ class Cookies(commands.Cog):
             (cookies, user_id, guild_id),
         )
         self.conn.commit()
+
+    def get_most_valuable_fish(self, user_id, guild_id):
+        self.cursor.execute(
+            """
+            SELECT most_valuable_fish FROM users WHERE user_id = ? AND guild_id = ?
+            """,
+            (user_id, guild_id),
+        )
+        return self.cursor.fetchone()[0]
 
     @commands.command()
     async def cookies(self, ctx, member: discord.Member = None):
@@ -127,9 +137,29 @@ class Cookies(commands.Cog):
             fish_value = int((random.random() ** 2) * 100) + 1
             user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
             self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies + fish_value)
-            await ctx.send(
-                f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
+
+            self.cursor.execute(
+                """
+                SELECT most_valuable_fish FROM users WHERE user_id = ? AND guild_id = ?
+                """,
+                (ctx.author.id, ctx.guild.id),
             )
+            most_valuable_fish = self.cursor.fetchone()[0]
+            if fish_value > most_valuable_fish:
+                self.cursor.execute(
+                    """
+                    UPDATE users SET most_valuable_fish = ? WHERE user_id = ? AND guild_id = ?
+                    """,
+                    (fish_value, ctx.author.id, ctx.guild.id),
+                )
+                self.conn.commit()
+                await ctx.send(
+                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies! This is your most valuable catch!"
+                )
+            else:
+                await ctx.send(
+                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
+                )
         else:
             await ctx.send(f"Tough luck, {ctx.author.mention}!")
 
@@ -214,6 +244,15 @@ class Cookies(commands.Cog):
 
         await ctx.send(
             f"{winner.mention} wins and receives {wager} cookies from {loser.mention}!"
+        )
+
+    @commands.command()
+    async def stats(self, ctx):
+        """Check your stats!"""
+        cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
+        most_valuable_fish = self.get_most_valuable_fish(ctx.author.id, ctx.guild.id)
+        await ctx.send(
+            f"{ctx.author.mention}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies"
         )
 
 
