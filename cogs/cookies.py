@@ -109,17 +109,17 @@ class Cookies(commands.Cog):
         await ctx.author.send("Please reply with 'rock', 'paper', or 'scissors'.")
         await member.send("Please reply with 'rock', 'paper', or 'scissors'.")
 
-        def check(m, member):
-            return m.author == member and m.content in ["rock", "paper", "scissors"]
+        async def get_choice(player):
+            def check(m, player):
+                return m.author == player and m.content in ["rock", "paper", "scissors"]
 
-        async def get_choice(member):
             try:
                 msg = await self.bot.wait_for(
-                    "message", check=lambda m: check(m, member), timeout=60.0
+                    "message", check=lambda m: check(m, player), timeout=60.0
                 )
                 return msg.content
             except asyncio.TimeoutError:
-                await ctx.send(f"{member.mention} did not respond in time!")
+                await ctx.send(f"{player.mention} did not respond in time!")
                 return None
 
         choice1, choice2 = await asyncio.gather(
@@ -130,7 +130,7 @@ class Cookies(commands.Cog):
             return
 
         await ctx.send(f"{ctx.author.mention} chose {choice1}!")
-        await member.send(f"{member.mention} chose {choice2}!")
+        await ctx.send(f"{member.mention} chose {choice2}!")
 
         choices = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
         if choices[choice1] == choice2:
