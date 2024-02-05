@@ -17,10 +17,8 @@ class Fish(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def fish(self, ctx, bait: str = None):
-        print("fish command")
         """Fish! If you use bait, you're guaranteed to catch a fish."""
         if bait is not None and bait.lower() == "bait":
-            print("fish")
             user_bait = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
             if user_bait < 1:
                 return await ctx.send("You don't have any bait!")

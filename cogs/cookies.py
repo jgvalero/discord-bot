@@ -160,8 +160,9 @@ class Cookies(commands.Cog):
         most_valuable_fish = self.db.get_value(
             ctx.author.id, ctx.guild.id, "most_valuable_fish"
         )
+        baits = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
         await ctx.send(
-            f"{ctx.author.mention}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies"
+            f"{ctx.author.mention}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
         )
 
 

@@ -45,10 +45,10 @@ class Database:
     def get_value(self, user_id, guild_id, column):
         with self.conn:
             self.cursor.execute(
-                """
-                SELECT ? FROM users WHERE user_id = ? AND guild_id = ?
+                f"""
+                SELECT {column} FROM users WHERE user_id = ? AND guild_id = ?
                 """,
-                (column, user_id, guild_id),
+                (user_id, guild_id),
             )
             return self.cursor.fetchone()[0]
 
@@ -56,10 +56,10 @@ class Database:
     def set_value(self, user_id, guild_id, column, value):
         with self.conn:
             self.cursor.execute(
-                """
-                UPDATE users SET ? = ? WHERE user_id = ? AND guild_id = ?
+                f"""
+                UPDATE users SET {column} = ? WHERE user_id = ? AND guild_id = ?
                 """,
-                (column, value, user_id, guild_id),
+                (value, user_id, guild_id),
             )
 
     @handle_errors
