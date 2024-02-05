@@ -123,47 +123,6 @@ class Cookies(commands.Cog):
         await ctx.send(f"{member.mention} now has {amount} cookies!")
 
     @commands.command()
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def fish(self, ctx):
-        """Fish!"""
-        message_content = f"{ctx.author.mention} is fishing"
-        message = await ctx.send(message_content)
-        for i in range(7):
-            await asyncio.sleep(1)
-            message_content += "."
-            await message.edit(content=message_content)
-        await asyncio.sleep(1)
-        if random.randint(1, 10) == 1:
-            fish_value = int((random.random() ** 2) * 100) + 1
-            user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
-            self.set_cookies(ctx.author.id, ctx.guild.id, user_cookies + fish_value)
-
-            self.cursor.execute(
-                """
-                SELECT most_valuable_fish FROM users WHERE user_id = ? AND guild_id = ?
-                """,
-                (ctx.author.id, ctx.guild.id),
-            )
-            most_valuable_fish = self.cursor.fetchone()[0]
-            if fish_value > most_valuable_fish:
-                self.cursor.execute(
-                    """
-                    UPDATE users SET most_valuable_fish = ? WHERE user_id = ? AND guild_id = ?
-                    """,
-                    (fish_value, ctx.author.id, ctx.guild.id),
-                )
-                self.conn.commit()
-                await ctx.send(
-                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies! This is your most valuable catch!"
-                )
-            else:
-                await ctx.send(
-                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
-                )
-        else:
-            await ctx.send(f"Tough luck, {ctx.author.mention}!")
-
-    @commands.command()
     async def mute(self, ctx, member: discord.Member):
         """Mutes a user for 10 seconds! Costs 10 cookies!"""
         user_cookies = self.get_cookies(ctx.author.id, ctx.guild.id)
