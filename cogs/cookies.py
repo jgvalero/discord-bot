@@ -117,6 +117,7 @@ class Cookies(commands.Cog):
                 msg = await self.bot.wait_for(
                     "message", check=lambda m: check(m, player), timeout=60.0
                 )
+                await player.send(f"You chose {msg.content}! Good luck!")
                 return msg.content
             except asyncio.TimeoutError:
                 await ctx.send(f"{player.mention} did not respond in time!")
