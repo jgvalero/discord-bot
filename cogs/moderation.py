@@ -22,7 +22,7 @@ class Moderation(commands.Cog):
         if any(word in content for word in self.blacklisted_words):
             await message.delete()
             await message.channel.send(
-                f"{message.author.mention}, that word is not allowed!"
+                f"{message.author.display_name}, that word is not allowed!"
             )
 
     # Ban command
@@ -33,7 +33,7 @@ class Moderation(commands.Cog):
         await member.ban(reason=reason)
 
         if alert:
-            await ctx.send(f"Banned {member.mention}")
+            await ctx.send(f"Banned {member.display_name}")
 
     # Kick command
     @commands.command()
@@ -43,7 +43,7 @@ class Moderation(commands.Cog):
         await member.kick(reason=reason)
 
         if alert:
-            await ctx.send(f"Kicked {member.mention}")
+            await ctx.send(f"Kicked {member.display_name}")
 
     # Clear command
     @commands.command()
@@ -60,7 +60,7 @@ class Moderation(commands.Cog):
         await member.edit(nick=name)
 
         if alert:
-            await ctx.send(f"Changed {member.mention}'s nickname to {name}")
+            await ctx.send(f"Changed {member.display_name}'s nickname to {name}")
 
 
 async def setup(bot):

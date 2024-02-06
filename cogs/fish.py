@@ -18,14 +18,16 @@ class Fish(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def fish(self, ctx, bait: str = None):
         """Fish! If you use bait, you're guaranteed to catch a fish."""
+        message_content = f"{ctx.author.display_name} is fishing"
+
         if bait is not None and bait.lower() == "bait":
             user_bait = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
             if user_bait < 1:
                 return await ctx.send("You don't have any bait!")
             else:
                 self.db.set_value(ctx.author.id, ctx.guild.id, "bait", user_bait - 1)
+                message_content += " (with bait)"
 
-        message_content = f"{ctx.author.mention} is fishing"
         message = await ctx.send(message_content)
         for i in range(7):
             await asyncio.sleep(1)
@@ -48,14 +50,14 @@ class Fish(commands.Cog):
                     ctx.author.id, ctx.guild.id, "most_valuable_fish", fish_value
                 )
                 await ctx.send(
-                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies! This is your most valuable catch!"
+                    f"{ctx.author.display_name} caught a fish worth {fish_value} cookies! This is your most valuable catch!"
                 )
             else:
                 await ctx.send(
-                    f"{ctx.author.mention} caught a fish worth {fish_value} cookies!"
+                    f"{ctx.author.display_name} caught a fish worth {fish_value} cookies!"
                 )
         else:
-            await ctx.send(f"Tough luck, {ctx.author.mention}!")
+            await ctx.send(f"Tough luck, {ctx.author.display_name}!")
 
     @commands.command()
     async def bait(self, ctx, amount):
@@ -70,11 +72,15 @@ class Fish(commands.Cog):
         user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
         user_bait = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
         if user_cookies < cost:
-            await ctx.send(f"You do not have enough cookies, {ctx.author.mention}!")
+            await ctx.send(
+                f"You do not have enough cookies, {ctx.author.display_name}!"
+            )
             return
         self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - cost)
         self.db.set_value(ctx.author.id, ctx.guild.id, "bait", user_bait + amount)
-        await ctx.send(f"{ctx.author.name} bought {amount} bait worth {cost} cookies!")
+        await ctx.send(
+            f"{ctx.author.display_name} bought {amount} bait (${cost})! You now have {user_bait + amount} bait. New balance: {user_cookies - cost} cookies."
+        )
 
 
 async def setup(bot):

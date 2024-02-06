@@ -25,7 +25,7 @@ class Cookies(commands.Cog):
             member = ctx.author
 
         cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
-        await ctx.send(f"{member.name} has {cookies} cookies!")
+        await ctx.send(f"{member.display_name} has {cookies} cookies!")
 
     @commands.command()
     async def leaderboard(self, ctx):
@@ -37,7 +37,7 @@ class Cookies(commands.Cog):
         leaderboard = "Leaderboard:\n"
         for index, row in enumerate(rows, start=1):
             member = ctx.guild.get_member(row[0])
-            leaderboard += f"{index}. {member.name} - {row[1]} cookies\n"
+            leaderboard += f"{index}. {member.display_name} - {row[1]} cookies\n"
 
         await ctx.send(leaderboard)
 
@@ -61,44 +61,51 @@ class Cookies(commands.Cog):
         member_cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
         self.db.set_value(member.id, ctx.guild.id, "cookies", member_cookies + amount)
 
-        await ctx.send(f"You gave {amount} cookies to {member.mention}!")
+        await ctx.send(f"You gave {amount} cookies to {member.display_name}!")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def set(self, ctx, member: discord.Member, amount: int):
         """Set the amount of cookies someone has!"""
         self.db.set_value(member.id, ctx.guild.id, "cookies", amount)
-        await ctx.send(f"{member.mention} now has {amount} cookies!")
+        await ctx.send(f"{member.display_name} now has {amount} cookies!")
 
     @commands.command()
     async def mute(self, ctx, member: discord.Member):
         """Mutes a user for 10 seconds! Costs 10 cookies!"""
         user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
         if user_cookies < 10:
-            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
+            await ctx.send(f"You don't have enough cookies ({ctx.author.display_name})!")
             return
         self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - 10)
         await member.edit(mute=True)
+        await ctx.send(
+            f"{member.display_name} has been muted for 10 seconds! Enjoy the silence!"
+        )
         await asyncio.sleep(10)
         await member.edit(mute=False)
-        self.save_users()
 
     @commands.command()
     async def deafen(self, ctx, member: discord.Member):
         """Deafens a user for 10 seconds! Costs 10 cookies!"""
         user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
         if user_cookies < 10:
-            await ctx.send(f"You don't have enough cookies ({ctx.author.mention})!")
+            await ctx.send(f"You don't have enough cookies ({ctx.author.display_name})!")
             return
         self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - 10)
         await member.edit(deafen=True)
+        await ctx.send(
+            f"{member.display_name} has been deafened for 10 seconds! We're having so much fun without you!"
+        )
         await asyncio.sleep(10)
         await member.edit(deafen=False)
-        self.save_users()
 
     @commands.command()
-    async def rps(self, ctx, member: discord.Member, wager: int):
+    async def rps(self, ctx, member: discord.Member, wager: int = None):
         """Play rock-paper-scissors with another user!"""
+        if wager is None:
+            return await ctx.send("Please specify a wager!")
+
         author_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
         member_cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
         if author_cookies < wager or member_cookies < wager:
@@ -107,7 +114,9 @@ class Cookies(commands.Cog):
             )
 
         await ctx.author.send("Please reply with 'rock', 'paper', or 'scissors'.")
-        await member.send("Please reply with 'rock', 'paper', or 'scissors'.")
+        await member.send(
+            f"You have been challenged to rock-paper-scissors by {ctx.author.display_name}! Please reply with 'rock', 'paper', or 'scissors'."
+        )
 
         async def get_choice(player):
             def check(m, player):
@@ -120,7 +129,7 @@ class Cookies(commands.Cog):
                 await player.send(f"You chose {msg.content}! Good luck!")
                 return msg.content
             except asyncio.TimeoutError:
-                await ctx.send(f"{player.mention} did not respond in time!")
+                await ctx.send(f"{player.display_name} did not respond in time!")
                 return None
 
         choice1, choice2 = await asyncio.gather(
@@ -130,8 +139,8 @@ class Cookies(commands.Cog):
         if choice1 is None or choice2 is None:
             return
 
-        await ctx.send(f"{ctx.author.mention} chose {choice1}!")
-        await ctx.send(f"{member.mention} chose {choice2}!")
+        await ctx.send(f"{ctx.author.display_name} chose {choice1}!")
+        await ctx.send(f"{member.display_name} chose {choice2}!")
 
         choices = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
         if choices[choice1] == choice2:
@@ -151,7 +160,7 @@ class Cookies(commands.Cog):
         self.db.set_value(loser.id, ctx.guild.id, "cookies", loser_cookies - wager)
 
         await ctx.send(
-            f"{winner.mention} wins and receives {wager} cookies from {loser.mention}!"
+            f"{winner.display_name} wins and receives {wager} cookies from {loser.display_name}!"
         )
 
     @commands.command()
@@ -163,7 +172,7 @@ class Cookies(commands.Cog):
         )
         baits = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
         await ctx.send(
-            f"{ctx.author.mention}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
+            f"{ctx.author.display_name}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
         )
 
 
