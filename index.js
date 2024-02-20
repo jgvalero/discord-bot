@@ -38,4 +38,6 @@ for (const file of eventFiles) {
 	}
 }
 
+client.cooldowns = new Collection();
+
 client.login(token);
