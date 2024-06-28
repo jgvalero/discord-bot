@@ -103,9 +103,9 @@ class Music(commands.Cog):
             # Play the song and check queue after
             ctx.voice_client.play(
                 self.song_queue[0],
-                after=lambda e: print(f"Player error: {e}")
-                if e
-                else self.check_queue(ctx),
+                after=lambda e: (
+                    print(f"Player error: {e}") if e else self.check_queue(ctx)
+                ),
             )
 
         await ctx.send(f"Now playing: {self.song_queue[0].title}!")
@@ -126,9 +126,9 @@ class Music(commands.Cog):
             # Play the song and check queue after
             ctx.voice_client.play(
                 self.song_queue[0],
-                after=lambda e: print(f"Player error: {e}")
-                if e
-                else self.check_queue(ctx),
+                after=lambda e: (
+                    print(f"Player error: {e}") if e else self.check_queue(ctx)
+                ),
             )
 
         await ctx.send(f"Now playing: {self.song_queue[0].title}!")
@@ -177,6 +177,7 @@ class Music(commands.Cog):
         if ctx.author == self.song_queue[0].author:
             ctx.voice_client.stop()
             await ctx.send(f"Skipped [by requester]!")
+            self.voting.reset()
         else:
             # Check if the user has already voted
             if self.voting.addVote(ctx.author):
@@ -190,6 +191,7 @@ class Music(commands.Cog):
             if self.voting.isDone():
                 ctx.voice_client.stop()
                 await ctx.send(f"Skipped [by vote]!")
+                self.voting.reset()
 
     @commands.command()
     async def pause(self, ctx):
@@ -230,9 +232,9 @@ class Music(commands.Cog):
         if self.song_queue:
             ctx.voice_client.play(
                 self.song_queue[0],
-                after=lambda e: print(f"Player error: {e}")
-                if e
-                else self.check_queue(ctx),
+                after=lambda e: (
+                    print(f"Player error: {e}") if e else self.check_queue(ctx)
+                ),
             )
 
 
