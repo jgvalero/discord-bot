@@ -1,13 +1,14 @@
 import random
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 import asyncio
 
 from utils.database import Database
 
 
-class Cookies(commands.Cog):
+class Cookies(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
         self.db = Database("data/users.db")
@@ -19,14 +20,17 @@ class Cookies(commands.Cog):
             for member in guild.members:
                 self.db.create_user(member.id, guild.id)
 
-    @commands.command()
-    async def cookies(self, ctx, member: discord.Member = None):
+    @app_commands.command()
+    async def cookies(self, interaction: discord.Interaction, member: discord.Member):
         """Check how many cookies you or another user have!"""
         if member is None:
             member = ctx.author
 
-        cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
-        await ctx.send(f"{member.display_name} has {cookies} cookies!")
+        if interaction.guild:
+            cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
+            await interaction.response.send_message(
+                f"{member.display_name} has {cookies} cookies!"
+            )
 
     @commands.command()
     async def leaderboard(self, ctx):
@@ -106,7 +110,7 @@ class Cookies(commands.Cog):
         await member.edit(deafen=False)
 
     @commands.command()
-    async def rps(self, ctx, member: discord.Member, wager: int = None):
+    async def rps(self, ctx, member: discord.Member, wager: int = 0):
         """Play rock-paper-scissors with another user!"""
         if wager is None:
             return await ctx.send("Please specify a wager!")

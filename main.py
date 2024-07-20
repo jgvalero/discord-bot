@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import random
 import os
 import asyncio
@@ -7,11 +8,22 @@ import json
 
 description = """Discord bot made by jgvalero! Work in progress..."""
 
+with open("config.json") as config_file:
+    config = json.load(config_file)
+
+
+class MyBot(commands.Bot):
+    async def setup_hook(self):
+        # This copies the global commands over to your guild.
+        self.tree.copy_global_to(guild=discord.Object(id=config["guild_id"]))
+        await self.tree.sync(guild=discord.Object(id=config["guild_id"]))
+
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="$", description=description, intents=intents)
+bot = MyBot(command_prefix="$", description=description, intents=intents)
 
 
 # Load all cogs in cogs folder
@@ -24,8 +36,9 @@ async def load_cogs():
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    print("------")
+    if bot.user:
+        print(f"Logged in as {bot.user} (ID: {bot.user.id})")
+        print("------")
 
 
 # New Commands
@@ -37,12 +50,9 @@ async def reload(ctx, extension):
 
 
 async def main():
-    with open("config.json") as config_file:
-        parsed_json = json.load(config_file)
-
     async with bot:
         await load_cogs()
-        await bot.start(parsed_json["discord_token"])
+        await bot.start(config["discord_token"])
 
 
 asyncio.run(main())
