@@ -5,18 +5,23 @@ import random
 import os
 import asyncio
 import json
+from dotenv import load_dotenv
+import sys
+
+if not load_dotenv():
+    print("Could not locate .env!")
+    sys.exit(1)
+
+token = os.environ['DISCORD_TOKEN']
+guild_id = os.environ['GUILD_ID']
 
 description = """Discord bot made by jgvalero! Work in progress..."""
-
-with open("config.json") as config_file:
-    config = json.load(config_file)
-
 
 class MyBot(commands.Bot):
     async def setup_hook(self):
         # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=discord.Object(id=config["guild_id"]))
-        await self.tree.sync(guild=discord.Object(id=config["guild_id"]))
+        self.tree.copy_global_to(guild=discord.Object(id=int(guild_id)))
+        await self.tree.sync(guild=discord.Object(id=int(guild_id)))
 
 
 intents = discord.Intents.default()
@@ -52,7 +57,7 @@ async def reload(ctx, extension):
 async def main():
     async with bot:
         await load_cogs()
-        await bot.start(config["discord_token"])
+        await bot.start(token)
 
 
 asyncio.run(main())
