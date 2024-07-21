@@ -1,21 +1,23 @@
-import discord
-from discord.ext import commands
-from discord import app_commands
-import random
-import os
 import asyncio
 import json
-from dotenv import load_dotenv
+import os
+import random
 import sys
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+from dotenv import load_dotenv
 
 if not load_dotenv():
     print("Could not locate .env!")
     sys.exit(1)
 
-token = os.environ['DISCORD_TOKEN']
-guild_id = os.environ['GUILD_ID']
+token = os.environ["DISCORD_TOKEN"]
+guild_id = os.environ["GUILD_ID"]
 
 description = """Discord bot made by jgvalero! Work in progress..."""
+
 
 class MyBot(commands.Bot):
     async def setup_hook(self):

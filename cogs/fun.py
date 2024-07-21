@@ -1,8 +1,8 @@
-from discord.ext import commands
-
-import random
 import json
 import os
+import random
+
+from discord.ext import commands
 
 
 class Fun(commands.Cog):

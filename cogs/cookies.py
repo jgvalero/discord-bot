@@ -1,9 +1,9 @@
-import random
-import discord
-from discord.ext import commands
-from discord import app_commands
-
 import asyncio
+import random
+
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 from utils.database import Database
 
@@ -35,13 +35,17 @@ class Cookies(commands.GroupCog):
         if interaction.guild is not None:
             rows = self.db.get_leaderboard(interaction.guild.id)
             if not rows:
-                return await interaction.response.send_message("No one has any cookies yet!")
+                return await interaction.response.send_message(
+                    "No one has any cookies yet!"
+                )
 
             leaderboard = "Leaderboard:\n"
             for index, row in enumerate(rows, start=1):
                 member = interaction.guild.get_member(row[0])
                 if member is not None:
-                    leaderboard += f"{index}. {member.display_name} - {row[1]} cookies\n"
+                    leaderboard += (
+                        f"{index}. {member.display_name} - {row[1]} cookies\n"
+                    )
 
             await interaction.response.send_message(leaderboard)
 

@@ -1,12 +1,11 @@
 # TAKEN FROM https://github.com/Rapptz/discord.py/blob/v2.3.2/examples/basic_voice.py TO USE AS EXAMPLE (UNDER MIT LICENSE)
 
 import asyncio
-
-import discord
-import yt_dlp
-import lyricsgenius
 import json
 
+import discord
+import lyricsgenius
+import yt_dlp
 from discord.ext import commands
 
 from utils.voting import Voting
