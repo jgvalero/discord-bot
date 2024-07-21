@@ -49,11 +49,11 @@ async def on_ready():
 
 
 # New Commands
-@bot.command()
-async def reload(ctx, extension):
+@bot.tree.command()
+async def reload(interaction: discord.Interaction, extension: str):
     """Reloads cogs"""
     await bot.reload_extension(f"cogs.{extension}")
-    await ctx.send(f"Reloaded {extension}!")
+    await interaction.response.send_message(f"Reloaded {extension}!")
 
 
 async def main():

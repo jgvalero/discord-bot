@@ -7,8 +7,18 @@ import discord
 import lyricsgenius
 import yt_dlp
 from discord.ext import commands
+from dotenv import load_dotenv
+import sys
+import os
 
 from utils.voting import Voting
+
+if not load_dotenv():
+    print("Could not locate .env!")
+    sys.exit(1)
+
+genius_token = os.getenv("GENIUS_TOKEN")
+
 
 # Suppress noise about console usage from errors
 yt_dlp.utils.bug_reports_message = lambda: ""
@@ -30,9 +40,8 @@ ffmpeg_options = {
 }
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
-with open("config.json") as config_file:
-    parsed_json = json.load(config_file)
-genius = lyricsgenius.Genius(parsed_json["genius_token"])
+if genius_token:
+    genius = lyricsgenius.Genius(genius_token)
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -221,8 +230,11 @@ class Music(commands.Cog):
 
     @commands.command()
     async def lyrics(self, ctx, *, query):
-        [artist, song] = query.split(" - ")
-        await ctx.send(genius.search_song(song, artist).lyrics)
+        if genius_token:
+            [artist, song] = query.split(" - ")
+            await ctx.send(genius.search_song(song, artist).lyrics)
+        else:
+            await ctx.send("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
 
     # Functions
     def check_queue(self, ctx):
