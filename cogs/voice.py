@@ -6,6 +6,7 @@ import json
 import discord
 import lyricsgenius
 import yt_dlp
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 import sys
@@ -74,14 +75,26 @@ class Music(commands.Cog):
         self.voting = Voting()
         self.song_queue = []
 
-    @commands.command()
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
+    @app_commands.command()
+    async def join(self, interaction: discord.Interaction):
+        # TO-DO: ADD ABILITY TO SPECIFY CHANNEL
+        # TO-DO: FIX UNKNOWN
+
         """Joins a voice channel"""
 
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
+        voice = interaction.guild
 
-        await channel.connect()
+        if interaction.user.voice is None or interaction.user.voice.channel is None:
+            return await interaction.response.send_message("You are not connected to a voice channel!")
+        else:
+            user_channel = interaction.user.voice.channel
+
+        if voice is not None and voice.voice_client is not None:
+            await voice.change_voice_state(channel=user_channel)
+        else:
+            await user_channel.connect()
+
+        await interaction.response.send_message(f"Joined {user_channel}!")
 
     @commands.command()
     async def play_file(self, ctx, *, query):
