@@ -21,30 +21,29 @@ class Cookies(commands.GroupCog):
                 self.db.create_user(member.id, guild.id)
 
     @app_commands.command()
-    async def cookies(self, interaction: discord.Interaction, member: discord.Member):
+    async def amount(self, interaction: discord.Interaction, member: discord.User):
         """Check how many cookies you or another user have!"""
-        if member is None:
-            member = ctx.author
-
         if interaction.guild:
             cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
             await interaction.response.send_message(
                 f"{member.display_name} has {cookies} cookies!"
             )
 
-    @commands.command()
-    async def leaderboard(self, ctx):
+    @app_commands.command()
+    async def leaderboard(self, interaction: discord.Interaction):
         """Check the leaderboard for the guild!"""
-        rows = self.db.get_leaderboard(ctx.guild.id)
-        if not rows:
-            return await ctx.send("No one has any cookies yet!")
+        if interaction.guild is not None:
+            rows = self.db.get_leaderboard(interaction.guild.id)
+            if not rows:
+                return await interaction.response.send_message("No one has any cookies yet!")
 
-        leaderboard = "Leaderboard:\n"
-        for index, row in enumerate(rows, start=1):
-            member = ctx.guild.get_member(row[0])
-            leaderboard += f"{index}. {member.display_name} - {row[1]} cookies\n"
+            leaderboard = "Leaderboard:\n"
+            for index, row in enumerate(rows, start=1):
+                member = interaction.guild.get_member(row[0])
+                if member is not None:
+                    leaderboard += f"{index}. {member.display_name} - {row[1]} cookies\n"
 
-        await ctx.send(leaderboard)
+            await interaction.response.send_message(leaderboard)
 
     @commands.command()
     async def give(self, ctx, member: discord.Member, amount: int):
