@@ -109,7 +109,7 @@ class Music(commands.Cog):
 
     @app_commands.command()
     async def play(self, interaction: discord.Interaction, query: str):
-        # TO-DO: COMPLETE IMPLEMENTATION
+        # TO-DO: COMPLETE IMPLEMENTATION AND BEFORE INVOKE
         """Plays from a url (almost anything yt_dlp supports)"""
 
         voice = interaction.client.voice_clients[0]
@@ -124,14 +124,14 @@ class Music(commands.Cog):
 
                 # Check if there is a song playing
                 if voice.is_playing():
-                    return await interaction.response.send_message(f"Added {player.title} to queue!")
+                    return await interaction.followup.send(f"Added {player.title} to queue!")
 
                 # Play the song and check queue after
                 voice.play(
                     self.song_queue[0],
-                #     after=lambda e: (
-                #         print(f"Player error: {e}") if e else self.check_queue(ctx)
-                #     ),
+                    after=lambda e: (
+                        print(f"Player error: {e}") if e else self.check_queue(interaction)
+                    ),
                 )
 
             # await interaction.response.send_message(f"Now playing: {self.song_queue[0].title}!")
@@ -258,14 +258,16 @@ class Music(commands.Cog):
             await ctx.send("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
 
     # Functions
-    def check_queue(self, ctx):
+    def check_queue(self, interaction: discord.Interaction):
+        voice = interaction.client.voice_clients[0]
+
         self.song_queue.pop(0)
 
         if self.song_queue:
-            ctx.voice_client.play(
+            voice.play(
                 self.song_queue[0],
                 after=lambda e: (
-                    print(f"Player error: {e}") if e else self.check_queue(ctx)
+                    print(f"Player error: {e}") if e else self.check_queue(interaction)
                 ),
             )
 
