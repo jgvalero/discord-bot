@@ -116,7 +116,6 @@ class Music(commands.Cog):
 
         voice = interaction.client.voice_clients[0]
 
-        print("1")
         async with interaction.channel.typing():
             await interaction.response.send_message("Fetching song...")
             # Get the song
