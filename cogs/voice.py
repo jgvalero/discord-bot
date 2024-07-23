@@ -79,6 +79,7 @@ class Music(commands.Cog):
     async def join(self, interaction: discord.Interaction):
         # TO-DO: ADD ABILITY TO SPECIFY CHANNEL
         # TO-DO: FIX UNKNOWN
+        # To-DO: REFINE THIS (MAYBE YOU DON'T EVEN NEED IT!)
 
         """Joins a voice channel"""
 
@@ -110,34 +111,33 @@ class Music(commands.Cog):
     @app_commands.command()
     async def play(self, interaction: discord.Interaction, query: str):
         # TO-DO: COMPLETE IMPLEMENTATION AND BEFORE INVOKE
-        """Plays from a url (almost anything yt_dlp supports)"""
+        # TO-DO: THIS IS MESSY, MAYBE TAKE A GANDER
+        """Plays a song!"""
 
         voice = interaction.client.voice_clients[0]
 
-        try:
-            async with interaction.channel.typing():
-                await interaction.response.send_message("Please wait while we process your request...")
-                # Get the song
-                player = await YTDLSource.from_url(query, loop=self.bot.loop)
-                player.author = interaction.user
-                self.song_queue.append(player)
+        print("1")
+        async with interaction.channel.typing():
+            await interaction.response.send_message("Fetching song...")
+            # Get the song
+            player = await YTDLSource.from_url(query, loop=self.bot.loop)
+            player.author = interaction.user
+            self.song_queue.append(player)
 
-                # Check if there is a song playing
-                if voice.is_playing():
-                    return await interaction.followup.send(f"Added {player.title} to queue!")
+            # Check if there is a song playing
+            if voice.is_playing():
+                return await interaction.followup.send(f"Added {player.title} to queue!")
 
-                # Play the song and check queue after
-                voice.play(
-                    self.song_queue[0],
-                    after=lambda e: (
-                        print(f"Player error: {e}") if e else self.check_queue(interaction)
-                    ),
-                )
+            # Play the song and check queue after
+            voice.play(
+                self.song_queue[0],
+                after=lambda e: (
+                    print(f"Player error: {e}") if e else self.check_queue(interaction)
+                ),
+            )
 
-            # await interaction.response.send_message(f"Now playing: {self.song_queue[0].title}!")
-        except:
-            print(sys.exc_info()[1])
-            raise
+        msg = await interaction.original_response()
+        await msg.edit(content=f"Now playing: {self.song_queue[0].title}!")
 
     @commands.command()
     async def stream(self, ctx, *, url):
@@ -178,6 +178,7 @@ class Music(commands.Cog):
 
         await ctx.voice_client.disconnect()
 
+    # TO-DO: FIX THIS!!!
     @play_file.before_invoke
     # @play.before_invoke
     @stream.before_invoke
