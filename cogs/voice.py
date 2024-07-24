@@ -267,7 +267,9 @@ class Music(commands.Cog):
     @app_commands.command()
     async def lyrics(self, interaction: discord.Interaction, artist: str, song: str):
         if genius_token:
-            await interaction.response.send_message(genius.search_song(song, artist).lyrics)
+            await interaction.response.send_message("Searching for song...")
+            msg = await interaction.original_response()
+            await msg.edit(content=genius.search_song(song, artist).lyrics)
         else:
             await interaction.response.send_message("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
 
