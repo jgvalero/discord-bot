@@ -1,5 +1,3 @@
-# TAKEN FROM https://github.com/Rapptz/discord.py/blob/v2.3.2/examples/basic_voice.py TO USE AS EXAMPLE (UNDER MIT LICENSE)
-
 import asyncio
 import json
 
@@ -13,10 +11,6 @@ import sys
 import os
 
 from utils.voting import Voting
-
-if not load_dotenv():
-    print("Could not locate .env!")
-    sys.exit(1)
 
 genius_token = os.getenv("GENIUS_TOKEN")
 
@@ -161,21 +155,25 @@ class Music(commands.Cog):
 
         await ctx.send(f"Now playing: {self.song_queue[0].title}!")
 
-    @commands.command()
-    async def volume(self, ctx, volume: int):
+    @app_commands.command()
+    async def volume(self, interaction: discord.Interaction, volume: int):
         """Changes the player's volume"""
 
-        if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.")
+        voice_client = interaction.client.voice_clients[0]
 
-        ctx.voice_client.source.volume = volume / 100
-        await ctx.send(f"Changed volume to {volume}%")
+        if voice_client is None:
+            return await interaction.response.send_message("Not connected to a voice channel.")
 
-    @commands.command()
-    async def stop(self, ctx):
+        voice_client.source.volume = volume / 100
+        await interaction.response.send_message(f"Changed volume to {volume}%")
+
+    @app_commands.command()
+    async def stop(self, interaction: discord.Interaction):
         """Stops and disconnects the bot from voice"""
 
-        await ctx.voice_client.disconnect()
+        voice_client = interaction.client.voice_clients[0]
+
+        await voice_client.disconnect()
 
     # TO-DO: FIX THIS!!!
     @play_file.before_invoke
