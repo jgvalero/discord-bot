@@ -91,16 +91,16 @@ class Music(commands.Cog):
 
         await interaction.response.send_message(f"Joined {user_channel}!")
 
-    @commands.command()
-    async def play_file(self, ctx, *, query):
-        """Plays a file from the local filesystem"""
+    # @commands.command()
+    # async def play_file(self, ctx, *, query):
+    #     """Plays a file from the local filesystem"""
 
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-        ctx.voice_client.play(
-            source, after=lambda e: print(f"Player error: {e}") if e else None
-        )
+    #     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
+    #     ctx.voice_client.play(
+    #         source, after=lambda e: print(f"Player error: {e}") if e else None
+    #     )
 
-        await ctx.send(f"Now playing: {query}")
+    #     await ctx.send(f"Now playing: {query}")
 
     @app_commands.command()
     async def play(self, interaction: discord.Interaction, query: str):
@@ -132,28 +132,28 @@ class Music(commands.Cog):
         msg = await interaction.original_response()
         await msg.edit(content=f"Now playing: {self.song_queue[0].title}!")
 
-    @commands.command()
-    async def stream(self, ctx, *, url):
-        """Streams from a url (same as yt, but doesn't predownload)"""
+    # @commands.command()
+    # async def stream(self, ctx, *, url):
+    #     """Streams from a url (same as yt, but doesn't predownload)"""
 
-        async with ctx.typing():
-            # Get the song
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            self.song_queue.append(player)
+    #     async with ctx.typing():
+    #         # Get the song
+    #         player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+    #         self.song_queue.append(player)
 
-            # Check if there is a song playing
-            if ctx.voice_client.is_playing():
-                return await ctx.send(f"Added {player.title} to queue!")
+    #         # Check if there is a song playing
+    #         if ctx.voice_client.is_playing():
+    #             return await ctx.send(f"Added {player.title} to queue!")
 
-            # Play the song and check queue after
-            ctx.voice_client.play(
-                self.song_queue[0],
-                after=lambda e: (
-                    print(f"Player error: {e}") if e else self.check_queue(ctx)
-                ),
-            )
+    #         # Play the song and check queue after
+    #         ctx.voice_client.play(
+    #             self.song_queue[0],
+    #             after=lambda e: (
+    #                 print(f"Player error: {e}") if e else self.check_queue(ctx)
+    #             ),
+    #         )
 
-        await ctx.send(f"Now playing: {self.song_queue[0].title}!")
+    #     await ctx.send(f"Now playing: {self.song_queue[0].title}!")
 
     @app_commands.command()
     async def volume(self, interaction: discord.Interaction, volume: int):
@@ -167,93 +167,109 @@ class Music(commands.Cog):
         voice_client.source.volume = volume / 100
         await interaction.response.send_message(f"Changed volume to {volume}%")
 
-    @app_commands.command()
-    async def stop(self, interaction: discord.Interaction):
-        """Stops and disconnects the bot from voice"""
+    # @app_commands.command()
+    # async def stop(self, interaction: discord.Interaction):
+    #     """Stops and disconnects the bot from voice"""
 
-        voice_client = interaction.client.voice_clients[0]
+    #     voice_client = interaction.client.voice_clients[0]
 
-        await voice_client.disconnect()
+    #     await voice_client.disconnect()
+
+    #     await interaction.response.send_message(f"We outta here!")
+
+    #     # TO-DO: CLEAR QUEUE
 
     # TO-DO: FIX THIS!!!
-    @play_file.before_invoke
+    # @play_file.before_invoke
     # @play.before_invoke
-    @stream.before_invoke
-    async def ensure_voice(self, ctx):
-        if ctx.voice_client is None:
-            if ctx.author.voice:
-                await ctx.author.voice.channel.connect()
+    # @stream.before_invoke
+    async def ensure_voice(self, interaction: discord.Interaction):
+        voice_client = interaction.client.voice_clients[0]
+
+        if voice_client is None:
+            if interaction.user.voice:
+                await interaction.user.voice.channel.connect()
             else:
-                await ctx.send("You are not connected to a voice channel.")
+                await interaction.response.send_message("You are not connected to a voice channel.")
                 raise commands.CommandError("Author not connected to a voice channel.")
         # elif ctx.voice_client.is_playing():
         #     ctx.voice_client.stop()
 
-    # New Commands
-    @commands.command()
-    async def skip(self, ctx):
+    @app_commands.command()
+    async def skip(self, interaction: discord.Interaction):
         """Skips currently playing song"""
-        if not ctx.voice_client.is_playing():
-            return await ctx.send(f"There is no song playing!")
+
+        voice_client = interaction.client.voice_clients[0]
+
+        if not voice_client.is_playing():
+            return await interaction.response.send_message(f"There is no song playing!")
 
         # Get number of people in the voice channel
-        num_people = len(ctx.voice_client.channel.members)
+        num_people = len(voice_client.channel.members)
         self.voting.requiredVotes = num_people // 2
 
         # Check if the user is the one who requested the song
-        if ctx.author == self.song_queue[0].author:
-            ctx.voice_client.stop()
-            await ctx.send(f"Skipped [by requester]!")
+        if interaction.user == self.song_queue[0].author:
+            voice_client.stop()
+            await interaction.response.send_message(f"Skipped [by requester]!")
             self.voting.reset()
         else:
             # Check if the user has already voted
-            if self.voting.addVote(ctx.author):
-                await ctx.send(
+            if self.voting.addVote(interaction.user):
+                await interaction.response.send_message(
                     f"Current votes: {self.voting.currentVotes}/{self.voting.requiredVotes}"
                 )
             else:
-                await ctx.send(f"You already voted!")
+                await interaction.response.send_message(f"You already voted!")
 
             # Check if the vote is done
             if self.voting.isDone():
-                ctx.voice_client.stop()
-                await ctx.send(f"Skipped [by vote]!")
+                voice_client.stop()
+                await interaction.response.send_message(f"Skipped [by vote]!")
                 self.voting.reset()
 
-    @commands.command()
-    async def pause(self, ctx):
+    @app_commands.command()
+    async def pause(self, interaction: discord.Interaction):
         """Pauses currently playing song"""
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.pause()
-            await ctx.send(f"Paused")
 
-    @commands.command()
-    async def resume(self, ctx):
+        voice_client = interaction.client.voice_clients[0]
+
+        if voice_client.is_playing():
+            voice_client.pause()
+            await interaction.response.send_message(f"Paused")
+
+    @app_commands.command()
+    async def resume(self, interaction: discord.Interaction):
         """Resumes currently paused song"""
-        if ctx.voice_client.is_paused():
-            ctx.voice_client.resume()
-            await ctx.send(f"Resumed")
 
-    @commands.command()
-    async def queue(self, ctx):
+        voice_client = interaction.client.voice_clients[0]
+
+        if voice_client.is_paused():
+            voice_client.resume()
+            await interaction.response.send_message(f"Resumed")
+
+    @app_commands.command()
+    async def queue(self, interaction: discord.Interaction):
         """Shows the music queue"""
+
+        voice_client = interaction.client.voice_clients[0]
+
         if not self.song_queue:
-            return await ctx.send("The queue is empty!")
+            return await interaction.response.send_message("The queue is empty!")
 
         queue_str = f"#1: {self.song_queue[0].title} requested by {self.song_queue[0].author} [Currently playing!]"
 
         for i in range(1, len(self.song_queue)):
             queue_str += f"\n#{i+1}: {self.song_queue[i].title} requested by {self.song_queue[i].author}"
 
-        await ctx.send(queue_str)
+        await interaction.response.send_message(queue_str)
 
-    @commands.command()
-    async def lyrics(self, ctx, *, query):
+    @app_commands.command()
+    async def lyrics(self, interaction: discord.Interaction, artist: str, song: str):
         if genius_token:
-            [artist, song] = query.split(" - ")
-            await ctx.send(genius.search_song(song, artist).lyrics)
+            await interaction.response.send_message(genius.search_song(song, artist).lyrics)
         else:
-            await ctx.send("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
+            await interaction.response.send_message("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
 
     # Functions
     def check_queue(self, interaction: discord.Interaction):
