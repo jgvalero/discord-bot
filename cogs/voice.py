@@ -1,5 +1,7 @@
 import asyncio
 import json
+import os
+import sys
 
 import discord
 import lyricsgenius
@@ -7,8 +9,6 @@ import yt_dlp
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-import sys
-import os
 
 from utils.voting import Voting
 
@@ -80,7 +80,9 @@ class Music(commands.Cog):
         voice = interaction.guild
 
         if interaction.user.voice is None or interaction.user.voice.channel is None:
-            return await interaction.response.send_message("You are not connected to a voice channel!")
+            return await interaction.response.send_message(
+                "You are not connected to a voice channel!"
+            )
         else:
             user_channel = interaction.user.voice.channel
 
@@ -119,7 +121,9 @@ class Music(commands.Cog):
 
             # Check if there is a song playing
             if voice.is_playing():
-                return await interaction.followup.send(f"Added {player.title} to queue!")
+                return await interaction.followup.send(
+                    f"Added {player.title} to queue!"
+                )
 
             # Play the song and check queue after
             voice.play(
@@ -162,7 +166,9 @@ class Music(commands.Cog):
         voice_client = interaction.client.voice_clients[0]
 
         if voice_client is None:
-            return await interaction.response.send_message("Not connected to a voice channel.")
+            return await interaction.response.send_message(
+                "Not connected to a voice channel."
+            )
 
         voice_client.source.volume = volume / 100
         await interaction.response.send_message(f"Changed volume to {volume}%")
@@ -190,7 +196,9 @@ class Music(commands.Cog):
             if interaction.user.voice:
                 await interaction.user.voice.channel.connect()
             else:
-                await interaction.response.send_message("You are not connected to a voice channel.")
+                await interaction.response.send_message(
+                    "You are not connected to a voice channel."
+                )
                 raise commands.CommandError("Author not connected to a voice channel.")
         # elif ctx.voice_client.is_playing():
         #     ctx.voice_client.stop()
@@ -271,7 +279,9 @@ class Music(commands.Cog):
             msg = await interaction.original_response()
             await msg.edit(content=genius.search_song(song, artist).lyrics)
         else:
-            await interaction.response.send_message("You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!")
+            await interaction.response.send_message(
+                "You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!"
+            )
 
     # Functions
     def check_queue(self, interaction: discord.Interaction):
