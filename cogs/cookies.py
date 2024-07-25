@@ -49,27 +49,27 @@ class Cookies(commands.GroupCog):
 
             await interaction.response.send_message(leaderboard)
 
-    @commands.command()
-    async def give(self, ctx, member: discord.Member, amount: int):
+    @app_commands.command()
+    async def give(self, interaction: discord.Interaction, member: discord.Member, amount: int):
         """Give your cookies to someone else!"""
         if amount <= 0:
-            return await ctx.send(
+            return await interaction.response.send_message(
                 "You can't give someone a negative amount of cookies!"
             )
 
-        author_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
+        author_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
 
         if author_cookies < amount:
-            return await ctx.send("You do not have enough cookies to give!")
+            return await interaction.response.send_message("You do not have enough cookies to give!")
 
         self.db.set_value(
-            ctx.author.id, ctx.guild.id, "cookies", author_cookies - amount
+            interaction.user.id, interaction.guild.id, "cookies", author_cookies - amount
         )
 
-        member_cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
-        self.db.set_value(member.id, ctx.guild.id, "cookies", member_cookies + amount)
+        member_cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
+        self.db.set_value(member.id, interaction.guild.id, "cookies", member_cookies + amount)
 
-        await ctx.send(f"You gave {amount} cookies to {member.display_name}!")
+        await interaction.response.send_message(f"You gave {amount} cookies to {member.display_name}!")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
