@@ -13,6 +13,3 @@ class Voting:
 
     def isDone(self):
         return self.currentVotes >= self.requiredVotes
-
-    def reset(self):
-        self.currentVotes = 0

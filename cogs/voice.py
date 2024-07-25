@@ -66,7 +66,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.voting = Voting()
         self.song_queue = []
 
     @app_commands.command()
@@ -117,6 +116,7 @@ class Music(commands.Cog):
             # Get the song
             player = await YTDLSource.from_url(query, loop=self.bot.loop)
             player.author = interaction.user
+            player.voting = Voting()
             self.song_queue.append(player)
 
             # Check if there is a song playing
@@ -214,27 +214,26 @@ class Music(commands.Cog):
 
         # Get number of people in the voice channel
         num_people = len(voice_client.channel.members)
-        self.voting.requiredVotes = num_people // 2
+        self.song_queue[0].voting.requiredVotes = num_people // 2
 
         # Check if the user is the one who requested the song
         if interaction.user == self.song_queue[0].author:
             voice_client.stop()
             await interaction.response.send_message(f"Skipped [by requester]!")
-            self.voting.reset()
+            self.song_queue[0].voting.reset()
         else:
             # Check if the user has already voted
-            if self.voting.addVote(interaction.user):
+            if self.song_queue[0].voting.addVote(interaction.user):
                 await interaction.response.send_message(
-                    f"Current votes: {self.voting.currentVotes}/{self.voting.requiredVotes}"
+                    f"Current votes: {self.song_queue[0].voting.currentVotes}/{self.song_queue[0].voting.requiredVotes}"
                 )
             else:
                 await interaction.response.send_message(f"You already voted!")
 
             # Check if the vote is done
-            if self.voting.isDone():
+            if self.song_queue[0].voting.isDone():
                 voice_client.stop()
                 await interaction.response.send_message(f"Skipped [by vote]!")
-                self.voting.reset()
 
     @app_commands.command()
     async def pause(self, interaction: discord.Interaction):
