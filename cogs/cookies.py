@@ -71,42 +71,42 @@ class Cookies(commands.GroupCog):
 
         await interaction.response.send_message(f"You gave {amount} cookies to {member.display_name}!")
 
-    @commands.command()
+    @app_commands.command()
     @commands.has_permissions(administrator=True)
-    async def set(self, ctx, member: discord.Member, amount: int):
+    async def set(self, interaction: discord.Interaction, member: discord.Member, amount: int):
         """Set the amount of cookies someone has!"""
-        self.db.set_value(member.id, ctx.guild.id, "cookies", amount)
-        await ctx.send(f"{member.display_name} now has {amount} cookies!")
+        self.db.set_value(member.id, interaction.guild.id, "cookies", amount)
+        await interaction.response.send_message(f"{member.display_name} now has {amount} cookies!")
 
-    @commands.command()
-    async def mute(self, ctx, member: discord.Member):
+    @app_commands.command()
+    async def mute(self, interaction: discord.Interaction, member: discord.Member):
         """Mutes a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
+        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
         if user_cookies < 10:
-            await ctx.send(
-                f"You don't have enough cookies ({ctx.author.display_name})!"
+            await interaction.response.send_message(
+                f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - 10)
+        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10)
         await member.edit(mute=True)
-        await ctx.send(
+        await interaction.response.send_message(
             f"{member.display_name} has been muted for 10 seconds! Enjoy the silence!"
         )
         await asyncio.sleep(10)
         await member.edit(mute=False)
 
-    @commands.command()
-    async def deafen(self, ctx, member: discord.Member):
+    @app_commands.command()
+    async def deafen(self, interaction: discord.Interaction, member: discord.Member):
         """Deafens a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
+        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
         if user_cookies < 10:
-            await ctx.send(
-                f"You don't have enough cookies ({ctx.author.display_name})!"
+            await interaction.response.send_message(
+                f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - 10)
+        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10)
         await member.edit(deafen=True)
-        await ctx.send(
+        await interaction.response.send_message(
             f"{member.display_name} has been deafened for 10 seconds! We're having so much fun without you!"
         )
         await asyncio.sleep(10)
@@ -179,16 +179,16 @@ class Cookies(commands.GroupCog):
             f"{winner.display_name} wins and receives {wager} cookies from {loser.display_name}!"
         )
 
-    @commands.command()
-    async def stats(self, ctx):
+    @app_commands.command()
+    async def stats(self, interaction: discord.Interaction):
         """Check your stats!"""
-        cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
+        cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
         most_valuable_fish = self.db.get_value(
-            ctx.author.id, ctx.guild.id, "most_valuable_fish"
+            interaction.user.id, interaction.guild.id, "most_valuable_fish"
         )
-        baits = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
-        await ctx.send(
-            f"{ctx.author.display_name}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
+        baits = self.db.get_value(interaction.user.id, interaction.guild.id, "bait")
+        await interaction.response.send_message(
+            f"{interaction.user.display_name}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
         )
 
     @commands.command()
