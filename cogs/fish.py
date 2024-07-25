@@ -2,6 +2,7 @@ import asyncio
 import random
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from utils.database import Database
@@ -60,27 +61,27 @@ class Fish(commands.Cog):
         else:
             await ctx.send(f"Tough luck, {ctx.author.display_name}!")
 
-    @commands.command()
-    async def bait(self, ctx, amount):
+    @app_commands.command()
+    async def bait(self, interaction: discord.Interaction, amount: int = 1):
         f"""Buy bait! Costs {BAIT_PRICE} cookies per bait."""
         try:
             amount = int(amount)
         except ValueError:
-            return await ctx.send("Invalid amount, enter a number!")
+            return await interaction.response.send_message("Invalid amount, enter a number!")
 
         amount = int(amount)
         cost = amount * BAIT_PRICE
-        user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
-        user_bait = self.db.get_value(ctx.author.id, ctx.guild.id, "bait")
+        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        user_bait = self.db.get_value(interaction.user.id, interaction.guild.id, "bait")
         if user_cookies < cost:
-            await ctx.send(
-                f"You do not have enough cookies, {ctx.author.display_name}!"
+            await interaction.response.send_message(
+                f"You do not have enough cookies, {interaction.user.display_name}!"
             )
             return
-        self.db.set_value(ctx.author.id, ctx.guild.id, "cookies", user_cookies - cost)
-        self.db.set_value(ctx.author.id, ctx.guild.id, "bait", user_bait + amount)
-        await ctx.send(
-            f"{ctx.author.display_name} bought {amount} bait (${cost})! You now have {user_bait + amount} bait. New balance: {user_cookies - cost} cookies."
+        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - cost)
+        self.db.set_value(interaction.user.id, interaction.guild.id, "bait", user_bait + amount)
+        await interaction.response.send_message(
+            f"{interaction.user.display_name} bought {amount} bait (${cost})! You now have {user_bait + amount} bait. New balance: {user_cookies - cost} cookies."
         )
 
 
