@@ -73,20 +73,7 @@ class Music(commands.Cog):
 
         """Joins a voice channel"""
 
-        voice = interaction.guild
-
-        if interaction.user.voice is None or interaction.user.voice.channel is None:
-            return await interaction.response.send_message(
-                "You are not connected to a voice channel!"
-            )
-        else:
-            user_channel = interaction.user.voice.channel
-
-        if voice is not None and voice.voice_client is not None:
-            await voice.change_voice_state(channel=user_channel)
-        else:
-            await user_channel.connect()
-
+        user_channel = await self.ensure_voice(interaction)
         await interaction.response.send_message(f"Joined {user_channel}!")
 
     # @commands.command()
@@ -105,6 +92,8 @@ class Music(commands.Cog):
         # TO-DO: COMPLETE IMPLEMENTATION AND BEFORE INVOKE
         # TO-DO: THIS IS MESSY, MAYBE TAKE A GANDER
         """Plays a song!"""
+
+        await self.ensure_voice(interaction)
 
         voice = interaction.client.voice_clients[0]
 
@@ -186,23 +175,39 @@ class Music(commands.Cog):
     # @play_file.before_invoke
     # @play.before_invoke
     # @stream.before_invoke
-    async def ensure_voice(self, interaction: discord.Interaction):
-        voice_client = interaction.client.voice_clients[0]
+    async def ensure_voice(self, interaction: discord.Interaction) -> str | None:
+        voice = interaction.guild
 
-        if voice_client is None:
-            if (
-                isinstance(interaction.user, discord.Member)
-                and interaction.user.voice
-                and interaction.user.voice.channel
-            ):
-                await interaction.user.voice.channel.connect()
-            else:
-                await interaction.response.send_message(
-                    "You are not connected to a voice channel."
-                )
-                raise commands.CommandError("Author not connected to a voice channel.")
-        elif voice_client and voice_client.is_playing():
-            voice_client.stop()
+        if interaction.user.voice is None or interaction.user.voice.channel is None:
+            return await interaction.response.send_message(
+                "You are not connected to a voice channel!"
+            )
+        else:
+            user_channel = interaction.user.voice.channel
+
+        if voice is not None and voice.voice_client is not None:
+            await voice.change_voice_state(channel=user_channel)
+        else:
+            await user_channel.connect()
+
+        return user_channel.name
+
+        # voice_client = interaction.client.voice_clients[0]
+
+        # if voice_client is None:
+        #     if (
+        #         isinstance(interaction.user, discord.Member)
+        #         and interaction.user.voice
+        #         and interaction.user.voice.channel
+        #     ):
+        #         await interaction.user.voice.channel.connect()
+        #     else:
+        #         await interaction.response.send_message(
+        #             "You are not connected to a voice channel."
+        #         )
+        #         raise commands.CommandError("Author not connected to a voice channel.")
+        # elif voice_client and voice_client.is_playing():
+        #     voice_client.stop()
 
     @app_commands.command()
     async def skip(self, interaction: discord.Interaction):
