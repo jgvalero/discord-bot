@@ -1,14 +1,11 @@
 import asyncio
-import json
 import os
-import sys
 
 import discord
 import lyricsgenius
 import yt_dlp
 from discord import app_commands
 from discord.ext import commands
-from dotenv import load_dotenv
 
 from utils.voting import Voting
 
@@ -210,7 +207,7 @@ class Music(commands.Cog):
         voice_client = interaction.client.voice_clients[0]
 
         if not voice_client.is_playing():
-            return await interaction.response.send_message(f"There is no song playing!")
+            return await interaction.response.send_message("There is no song playing!")
 
         # Get number of people in the voice channel
         num_people = len(voice_client.channel.members)
@@ -219,7 +216,7 @@ class Music(commands.Cog):
         # Check if the user is the one who requested the song
         if interaction.user == self.song_queue[0].author:
             voice_client.stop()
-            await interaction.response.send_message(f"Skipped [by requester]!")
+            await interaction.response.send_message("Skipped [by requester]!")
             self.song_queue[0].voting.reset()
         else:
             # Check if the user has already voted
@@ -228,12 +225,12 @@ class Music(commands.Cog):
                     f"Current votes: {self.song_queue[0].voting.currentVotes}/{self.song_queue[0].voting.requiredVotes}"
                 )
             else:
-                await interaction.response.send_message(f"You already voted!")
+                await interaction.response.send_message("You already voted!")
 
             # Check if the vote is done
             if self.song_queue[0].voting.isDone():
                 voice_client.stop()
-                await interaction.response.send_message(f"Skipped [by vote]!")
+                await interaction.response.send_message("Skipped [by vote]!")
 
     @app_commands.command()
     async def pause(self, interaction: discord.Interaction):
@@ -243,7 +240,7 @@ class Music(commands.Cog):
 
         if voice_client.is_playing():
             voice_client.pause()
-            await interaction.response.send_message(f"Paused")
+            await interaction.response.send_message("Paused")
 
     @app_commands.command()
     async def resume(self, interaction: discord.Interaction):
@@ -253,13 +250,11 @@ class Music(commands.Cog):
 
         if voice_client.is_paused():
             voice_client.resume()
-            await interaction.response.send_message(f"Resumed")
+            await interaction.response.send_message("Resumed")
 
     @app_commands.command()
     async def queue(self, interaction: discord.Interaction):
         """Shows the music queue"""
-
-        voice_client = interaction.client.voice_clients[0]
 
         if not self.song_queue:
             return await interaction.response.send_message("The queue is empty!")

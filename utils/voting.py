@@ -4,12 +4,12 @@ class Voting:
         self.currentVotes = 0
         self.voters = []
 
-    def addVote(self, user):
+    def addVote(self, user) -> bool:
         if user not in self.voters:
             self.currentVotes += 1
             self.voters.append(user)
             return True
         return False
 
-    def isDone(self):
+    def isDone(self) -> bool:
         return self.currentVotes >= self.requiredVotes
