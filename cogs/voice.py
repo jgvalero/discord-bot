@@ -277,6 +277,8 @@ class Music(commands.Cog):
 
     @app_commands.command()
     async def lyrics(self, interaction: discord.Interaction, artist: str, song: str):
+        """Get lyrics to your favorite song"""
+
         if genius_token:
             await interaction.response.send_message("Searching for song...")
             msg = await interaction.original_response()

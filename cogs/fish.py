@@ -63,23 +63,31 @@ class Fish(commands.Cog):
 
     @app_commands.command()
     async def bait(self, interaction: discord.Interaction, amount: int = 1):
-        f"""Buy bait! Costs {BAIT_PRICE} cookies per bait."""
+        """Buy bait! Costs cookies!"""
         try:
             amount = int(amount)
         except ValueError:
-            return await interaction.response.send_message("Invalid amount, enter a number!")
+            return await interaction.response.send_message(
+                "Invalid amount, enter a number!"
+            )
 
         amount = int(amount)
         cost = amount * BAIT_PRICE
-        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        user_cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
         user_bait = self.db.get_value(interaction.user.id, interaction.guild.id, "bait")
         if user_cookies < cost:
             await interaction.response.send_message(
                 f"You do not have enough cookies, {interaction.user.display_name}!"
             )
             return
-        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - cost)
-        self.db.set_value(interaction.user.id, interaction.guild.id, "bait", user_bait + amount)
+        self.db.set_value(
+            interaction.user.id, interaction.guild.id, "cookies", user_cookies - cost
+        )
+        self.db.set_value(
+            interaction.user.id, interaction.guild.id, "bait", user_bait + amount
+        )
         await interaction.response.send_message(
             f"{interaction.user.display_name} bought {amount} bait (${cost})! You now have {user_bait + amount} bait. New balance: {user_cookies - cost} cookies."
         )
