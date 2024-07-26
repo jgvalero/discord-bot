@@ -190,15 +190,19 @@ class Music(commands.Cog):
         voice_client = interaction.client.voice_clients[0]
 
         if voice_client is None:
-            if interaction.user.voice:
+            if (
+                isinstance(interaction.user, discord.Member)
+                and interaction.user.voice
+                and interaction.user.voice.channel
+            ):
                 await interaction.user.voice.channel.connect()
             else:
                 await interaction.response.send_message(
                     "You are not connected to a voice channel."
                 )
                 raise commands.CommandError("Author not connected to a voice channel.")
-        # elif ctx.voice_client.is_playing():
-        #     ctx.voice_client.stop()
+        elif voice_client and voice_client.is_playing():
+            voice_client.stop()
 
     @app_commands.command()
     async def skip(self, interaction: discord.Interaction):

@@ -50,44 +50,65 @@ class Cookies(commands.GroupCog):
             await interaction.response.send_message(leaderboard)
 
     @app_commands.command()
-    async def give(self, interaction: discord.Interaction, member: discord.Member, amount: int):
+    async def give(
+        self, interaction: discord.Interaction, member: discord.Member, amount: int
+    ):
         """Give your cookies to someone else!"""
         if amount <= 0:
             return await interaction.response.send_message(
                 "You can't give someone a negative amount of cookies!"
             )
 
-        author_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        author_cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
 
         if author_cookies < amount:
-            return await interaction.response.send_message("You do not have enough cookies to give!")
+            return await interaction.response.send_message(
+                "You do not have enough cookies to give!"
+            )
 
         self.db.set_value(
-            interaction.user.id, interaction.guild.id, "cookies", author_cookies - amount
+            interaction.user.id,
+            interaction.guild.id,
+            "cookies",
+            author_cookies - amount,
         )
 
         member_cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
-        self.db.set_value(member.id, interaction.guild.id, "cookies", member_cookies + amount)
+        self.db.set_value(
+            member.id, interaction.guild.id, "cookies", member_cookies + amount
+        )
 
-        await interaction.response.send_message(f"You gave {amount} cookies to {member.display_name}!")
+        await interaction.response.send_message(
+            f"You gave {amount} cookies to {member.display_name}!"
+        )
 
     @app_commands.command()
     @commands.has_permissions(administrator=True)
-    async def set(self, interaction: discord.Interaction, member: discord.Member, amount: int):
+    async def set(
+        self, interaction: discord.Interaction, member: discord.Member, amount: int
+    ):
         """Set the amount of cookies someone has!"""
         self.db.set_value(member.id, interaction.guild.id, "cookies", amount)
-        await interaction.response.send_message(f"{member.display_name} now has {amount} cookies!")
+        await interaction.response.send_message(
+            f"{member.display_name} now has {amount} cookies!"
+        )
 
     @app_commands.command()
     async def mute(self, interaction: discord.Interaction, member: discord.Member):
         """Mutes a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        user_cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
         if user_cookies < 10:
             await interaction.response.send_message(
                 f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10)
+        self.db.set_value(
+            interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
+        )
         await member.edit(mute=True)
         await interaction.response.send_message(
             f"{member.display_name} has been muted for 10 seconds! Enjoy the silence!"
@@ -98,13 +119,17 @@ class Cookies(commands.GroupCog):
     @app_commands.command()
     async def deafen(self, interaction: discord.Interaction, member: discord.Member):
         """Deafens a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        user_cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
         if user_cookies < 10:
             await interaction.response.send_message(
                 f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10)
+        self.db.set_value(
+            interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
+        )
         await member.edit(deafen=True)
         await interaction.response.send_message(
             f"{member.display_name} has been deafened for 10 seconds! We're having so much fun without you!"
@@ -166,7 +191,7 @@ class Cookies(commands.GroupCog):
             winner = member
             loser = ctx.author
         else:
-            await ctx.send(f"It's a draw!")
+            await ctx.send("It's a draw!")
             return
 
         winner_cookies = self.db.get_value(winner.id, ctx.guild.id, "cookies")
@@ -182,7 +207,9 @@ class Cookies(commands.GroupCog):
     @app_commands.command()
     async def stats(self, interaction: discord.Interaction):
         """Check your stats!"""
-        cookies = self.db.get_value(interaction.user.id, interaction.guild.id, "cookies")
+        cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
         most_valuable_fish = self.db.get_value(
             interaction.user.id, interaction.guild.id, "most_valuable_fish"
         )
@@ -197,7 +224,7 @@ class Cookies(commands.GroupCog):
 
         user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
         if user_cookies < wager:
-            return await ctx.send(f"You don't have enough cookies to make this wager!")
+            return await ctx.send("You don't have enough cookies to make this wager!")
 
         DECK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11]
         DEALER_HIT_THRESHOLD = 17

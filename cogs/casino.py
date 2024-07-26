@@ -23,7 +23,7 @@ class Casino(commands.GroupCog):
             )
             if user_cookies < amount:
                 return await interaction.response.send_message(
-                    f"You don't have enough cookies to make this wager!"
+                    "You don't have enough cookies to make this wager!"
                 )
             else:
                 self.db.set_value(
