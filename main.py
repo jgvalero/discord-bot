@@ -1,11 +1,8 @@
 import asyncio
-import json
 import os
-import random
 import sys
 
 import discord
-from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -48,7 +45,6 @@ async def on_ready():
         print("------")
 
 
-# New Commands
 @bot.tree.command()
 async def reload(interaction: discord.Interaction, extension: str):
     """Reloads cogs"""

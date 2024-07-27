@@ -1,6 +1,7 @@
 import os
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 
@@ -46,11 +47,12 @@ class Moderation(commands.Cog):
             await ctx.send(f"Kicked {member.display_name}")
 
     # Clear command
-    @commands.command()
+    @app_commands.command()
     @commands.has_permissions(manage_messages=True)
-    async def clear(self, ctx, amount=5):
+    async def clear(self, interaction: discord.Interaction, amount: int = 5):
         """Clears a number of messages from the channel"""
-        await ctx.channel.purge(limit=amount)
+        await interaction.response.send_message(content="Purging!", ephemeral=True)
+        await interaction.channel.purge(limit=amount)
 
     # Change nickname command
     @commands.command()
