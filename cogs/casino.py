@@ -57,21 +57,24 @@ class Casino(commands.GroupCog):
         )
 
     @app_commands.command()
-    async def blackjack(self, interaction: discord.Interaction, wager: int = 1)
+    async def blackjack(self, interaction: discord.Interaction, wager: int = 1):
         """Starts a game of blackjack with a wager!"""
 
-        return await interaction.response.send_message("Bazinga!")
-        # user_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
-        # if user_cookies < wager:
-        #     return await ctx.send("You don't have enough cookies to make this wager!")
+        user_cookies = self.db.get_value(
+            interaction.user.id, interaction.guild.id, "cookies"
+        )
+        if user_cookies < wager:
+            return await interaction.response.send_message(
+                "You don't have enough cookies to make this wager!"
+            )
 
-        # DECK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11]
-        # DEALER_HIT_THRESHOLD = 17
+        DECK = [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11]
+        DEALER_HIT_THRESHOLD = 17
 
-        # random.shuffle(DECK)
+        random.shuffle(DECK)
 
-        # player_hand = [DECK.pop(), DECK.pop()]
-        # dealer_hand = [DECK.pop(), DECK.pop()]
+        player_hand = [DECK.pop(), DECK.pop()]
+        dealer_hand = [DECK.pop(), DECK.pop()]
 
         # await ctx.send(f"Your hand: {player_hand} ({sum(player_hand)})")
         # await ctx.send(f"Dealer's hand: {dealer_hand[0]} _")
@@ -131,6 +134,29 @@ class Casino(commands.GroupCog):
         #         )
         #     else:
         #         await ctx.send("It's a tie! Zoo wee mama!")
+
+        return await interaction.response.send_message("Bazinga!")
+
+    @app_commands.command()
+    async def test(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            "What would you like to do?", view=Blackjack()
+        )
+
+
+class Blackjack(discord.ui.View):
+    @discord.ui.button(label="Hit", style=discord.ButtonStyle.red)
+    async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Do stuff
+
+        await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(label="Stand", style=discord.ButtonStyle.red)
+    async def stand(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Do stuff
+
+        await interaction.response.edit_message(view=self)
+
 
 async def setup(bot):
     await bot.add_cog(Casino(bot))
