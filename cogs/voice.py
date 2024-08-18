@@ -52,6 +52,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
             None, lambda: ytdl.extract_info(url, download=not stream)
         )
 
+        if data is None:
+            raise TypeError()
+
         if "entries" in data:
             # take first item from a playlist
             data = data["entries"][0]

@@ -136,7 +136,7 @@ class DatabaseSingleton(metaclass=SingletonMeta):
 
 if __name__ == "__main__":
     print("Setting up database...")
-    db = Database("data/users.db")
+    db = DatabaseSingleton("data/users.db")
     db.create_tables()
     db.update_database()
     print("Database setup complete.")

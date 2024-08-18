@@ -1,5 +1,4 @@
 import asyncio
-import random
 
 import discord
 from discord import app_commands
