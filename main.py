@@ -5,6 +5,7 @@ import sys
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from utils.database import DatabaseSingleton
 
 if not load_dotenv():
     print("Could not locate .env!")
@@ -54,7 +55,9 @@ async def reload(interaction: discord.Interaction, extension: str):
 
 async def main():
     async with bot:
+        print("Loading cogs...")
         await load_cogs()
+        print("Starting bot...")
         await bot.start(token)
 
 

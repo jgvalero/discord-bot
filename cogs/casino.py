@@ -4,13 +4,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database import Database
+from utils.database import DatabaseSingleton
 
 
 class Casino(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = Database("data/users.db")
+        self.db = DatabaseSingleton("data/users.db")
 
     @app_commands.command()
     async def slots(self, interaction: discord.Interaction, wager: int = 1):

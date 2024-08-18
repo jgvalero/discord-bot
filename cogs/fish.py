@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database import Database
+from utils.database import DatabaseSingleton
 
 COOLDOWN_TIME = 10
 BAIT_PRICE = 50
@@ -14,7 +14,7 @@ BAIT_PRICE = 50
 class Fish(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = Database("data/users.db")
+        self.db = DatabaseSingleton("data/users.db")
 
     @app_commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)

@@ -5,13 +5,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database import Database
+from utils.database import DatabaseSingleton
 
 
 class Cookies(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = Database("data/users.db")
+        self.db = DatabaseSingleton("data/users.db")
 
     @commands.Cog.listener()
     async def on_ready(self):
