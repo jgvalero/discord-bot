@@ -19,6 +19,7 @@ def handle_errors(func):
 
     return wrapper
 
+
 class SingletonMeta(type):
     _instances = {}
 
@@ -27,6 +28,7 @@ class SingletonMeta(type):
             instance = super().__call__(*args, **kwargs)
             cls._instances[cls] = instance
         return cls._instances[cls]
+
 
 class DatabaseSingleton(metaclass=SingletonMeta):
     def __init__(self, path: str):
