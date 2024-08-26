@@ -41,12 +41,12 @@ class Casino(commands.GroupCog):
         def evaluate_slots(wheel1, wheel2, wheel3):
             if wheel1 == wheel2 == wheel3:
                 if interaction.guild:
-                    payout = wager * 10
+                    payout = wager * 100
                     self.db.set_value(
                         interaction.user.id,
                         interaction.guild.id,
                         "cookies",
-                        payout * 10,
+                        user_cookies + payout,
                     )
                     return f"You won! Payout: {payout}"
             else:
