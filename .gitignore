@@ -170,3 +170,4 @@ data/trivia_questions.json
 data/users.json
 data/users.db
 *.old
+data/fish.json
