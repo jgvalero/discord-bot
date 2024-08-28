@@ -1,6 +1,6 @@
-import random
 import json
 import os
+import random
 
 import discord
 from discord import app_commands
@@ -31,11 +31,13 @@ class Fish(commands.GroupCog):
             embed = discord.Embed(title="You caught a fish!", color=discord.Color.green())
             embed.set_image(url="https://media1.tenor.com/m/ZHze27YyLIkAAAAC/joel-spinning.gif")
             embed.add_field(name="Type", value=random_fish["name"], inline=True)
-            embed.add_field(name="Price", value=f"{random_fish["price"]} cookies", inline=True)
+            embed.add_field(name="Price", value=f"{random_fish['price']} cookies", inline=True)
 
             await interaction.response.send_message(embed=embed)
         else:
-            await interaction.response.send_message("Tough luck!")
+            embed = discord.Embed(title="Tough luck!", color = discord.Color.red())
+            embed.add_field(name="Current dry streak", value="PLACEHOLDER!!!", inline=True)
+            await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     async def shop(self, interaction: discord.Interaction) -> None:
