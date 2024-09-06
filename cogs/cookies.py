@@ -4,26 +4,26 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database import DatabaseSingleton
+# from utils.database import DatabaseSingleton
 
 
 class Cookies(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = DatabaseSingleton("data/users.db")
+        # self.db = DatabaseSingleton("data/users.db")
 
     @commands.Cog.listener()
     async def on_ready(self):
         """Event that runs when the bot has connected to the Discord API"""
         for guild in self.bot.guilds:
             for member in guild.members:
-                self.db.create_user(member.id, guild.id)
+                # self.db.create_user(member.id, guild.id)
 
     @app_commands.command()
     async def amount(self, interaction: discord.Interaction, member: discord.User):
         """Check how many cookies you or another user have!"""
         if interaction.guild:
-            cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
+            # cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
             await interaction.response.send_message(
                 f"{member.display_name} has {cookies} cookies!"
             )
@@ -32,7 +32,7 @@ class Cookies(commands.GroupCog):
     async def leaderboard(self, interaction: discord.Interaction):
         """Check the leaderboard for the guild!"""
         if interaction.guild is not None:
-            rows = self.db.get_leaderboard(interaction.guild.id)
+            # rows = self.db.get_leaderboard(interaction.guild.id)
             if not rows:
                 return await interaction.response.send_message(
                     "No one has any cookies yet!"
@@ -58,7 +58,7 @@ class Cookies(commands.GroupCog):
                 "You can't give someone a negative amount of cookies!"
             )
 
-        author_cookies = self.db.get_value(
+        # author_cookies = self.db.get_value(
             interaction.user.id, interaction.guild.id, "cookies"
         )
 
@@ -67,15 +67,15 @@ class Cookies(commands.GroupCog):
                 "You do not have enough cookies to give!"
             )
 
-        self.db.set_value(
+        # self.db.set_value(
             interaction.user.id,
             interaction.guild.id,
             "cookies",
             author_cookies - amount,
         )
 
-        member_cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
-        self.db.set_value(
+        # member_cookies = self.db.get_value(member.id, interaction.guild.id, "cookies")
+        # self.db.set_value(
             member.id, interaction.guild.id, "cookies", member_cookies + amount
         )
 
@@ -89,7 +89,7 @@ class Cookies(commands.GroupCog):
         self, interaction: discord.Interaction, member: discord.Member, amount: int
     ):
         """Set the amount of cookies someone has!"""
-        self.db.set_value(member.id, interaction.guild.id, "cookies", amount)
+        # self.db.set_value(member.id, interaction.guild.id, "cookies", amount)
         await interaction.response.send_message(
             f"{member.display_name} now has {amount} cookies!"
         )
@@ -97,7 +97,7 @@ class Cookies(commands.GroupCog):
     @app_commands.command()
     async def mute(self, interaction: discord.Interaction, member: discord.Member):
         """Mutes a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(
+        # user_cookies = self.db.get_value(
             interaction.user.id, interaction.guild.id, "cookies"
         )
         if user_cookies < 10:
@@ -105,7 +105,7 @@ class Cookies(commands.GroupCog):
                 f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(
+        # self.db.set_value(
             interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
         )
         await member.edit(mute=True)
@@ -118,7 +118,7 @@ class Cookies(commands.GroupCog):
     @app_commands.command()
     async def deafen(self, interaction: discord.Interaction, member: discord.Member):
         """Deafens a user for 10 seconds! Costs 10 cookies!"""
-        user_cookies = self.db.get_value(
+        # user_cookies = self.db.get_value(
             interaction.user.id, interaction.guild.id, "cookies"
         )
         if user_cookies < 10:
@@ -126,7 +126,7 @@ class Cookies(commands.GroupCog):
                 f"You don't have enough cookies ({interaction.user.display_name})!"
             )
             return
-        self.db.set_value(
+        # self.db.set_value(
             interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
         )
         await member.edit(deafen=True)
@@ -142,8 +142,8 @@ class Cookies(commands.GroupCog):
         if wager is None:
             return await ctx.send("Please specify a wager!")
 
-        author_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
-        member_cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
+        # author_cookies = self.db.get_value(ctx.author.id, ctx.guild.id, "cookies")
+        # member_cookies = self.db.get_value(member.id, ctx.guild.id, "cookies")
         if author_cookies < wager or member_cookies < wager:
             return await ctx.send(
                 "One or both users do not have enough cookies to make this wager!"
@@ -193,11 +193,11 @@ class Cookies(commands.GroupCog):
             await ctx.send("It's a draw!")
             return
 
-        winner_cookies = self.db.get_value(winner.id, ctx.guild.id, "cookies")
-        self.db.set_value(winner.id, ctx.guild.id, "cookies", winner_cookies + wager)
+        # winner_cookies = self.db.get_value(winner.id, ctx.guild.id, "cookies")
+        # self.db.set_value(winner.id, ctx.guild.id, "cookies", winner_cookies + wager)
 
-        loser_cookies = self.db.get_value(loser.id, ctx.guild.id, "cookies")
-        self.db.set_value(loser.id, ctx.guild.id, "cookies", loser_cookies - wager)
+        # loser_cookies = self.db.get_value(loser.id, ctx.guild.id, "cookies")
+        # self.db.set_value(loser.id, ctx.guild.id, "cookies", loser_cookies - wager)
 
         await ctx.send(
             f"{winner.display_name} wins and receives {wager} cookies from {loser.display_name}!"
@@ -206,13 +206,13 @@ class Cookies(commands.GroupCog):
     @app_commands.command()
     async def stats(self, interaction: discord.Interaction):
         """Check your stats!"""
-        cookies = self.db.get_value(
+        # cookies = self.db.get_value(
             interaction.user.id, interaction.guild.id, "cookies"
         )
-        most_valuable_fish = self.db.get_value(
+        # most_valuable_fish = self.db.get_value(
             interaction.user.id, interaction.guild.id, "most_valuable_fish"
         )
-        baits = self.db.get_value(interaction.user.id, interaction.guild.id, "bait")
+        # baits = self.db.get_value(interaction.user.id, interaction.guild.id, "bait")
         await interaction.response.send_message(
             f"{interaction.user.display_name}'s stats:\nCookies: {cookies}\nMost valuable fish: {most_valuable_fish} cookies\nBaits: {baits}"
         )
