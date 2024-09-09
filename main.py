@@ -64,9 +64,11 @@ async def main():
 
     async with ClientSession() as our_client:
        with Database("data/users.db") as db:
-            exts = ["casino", "cookies", "fish", "fun", "moderation", "voice"]
+            exts = ["cookies"]
             intents = discord.Intents.default()
             intents.message_content = True
+            intents.presences = True
+            intents.members = True
             async with DiscordBot(
                 command_prefix="$",
                 database=db,
