@@ -13,18 +13,15 @@ class Cookies(commands.GroupCog):
     @commands.Cog.listener()
     async def on_ready(self):
         """Event that runs when the bot has connected to the Discord API"""
-        print("Entering")
         for guild in self.bot.guilds:
-            print(guild)
             for member in guild.members:
-                print(member)
                 self.bot.database.create_user(member.id, guild.id)
 
     @app_commands.command()
     async def amount(self, interaction: discord.Interaction, member: discord.User):
         """Check how many cookies you or another user have!"""
-        member_cookies = await self.get_cookies(interaction, member)
-        await interaction.response.send_message(f"{member.display_name} has {member_cookies} cookies!")
+        cookies = await self.get_cookies(interaction, member)
+        await interaction.response.send_message(f"{member.display_name} has {cookies} cookies!")
 
     # @app_commands.command()
     # async def leaderboard(self, interaction: discord.Interaction):
@@ -54,7 +51,9 @@ class Cookies(commands.GroupCog):
                 "You can't give someone a negative amount of cookies!"
             )
 
-        await self.remove_cookies(interaction, interaction.user, amount)
+        if not await self.remove_cookies(interaction, interaction.user, amount):
+            return
+
         await self.add_cookies(interaction, recipient, amount)
 
         await interaction.response.send_message(
@@ -204,26 +203,29 @@ class Cookies(commands.GroupCog):
         return self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies")[0]
 
     async def add_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int):
-        # Make sure to update all stats!
+        if interaction.guild is None:
+            raise BadArgument()
+
+        [cookies, total, max] =  self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies, total, max")
+        cookies += amount
+        total += amount
+
+        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies)
+        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "total", total)
+        if cookies > max:
+            self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "max", cookies)
+
+    async def remove_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int) -> bool:
         if interaction.guild is None:
             raise BadArgument()
 
         cookies = await self.get_cookies(interaction, member)
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies + amount)
-
-    async def remove_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int):
-        # Make sure to update all stats!
-        if interaction.guild is None:
-            raise BadArgument()
-
-        cookies = await self.get_cookies(interaction, member)
-
         if cookies < amount:
-            return await interaction.response.send_message(
-                "You do not have enough cookies to give!"
-            )
+            await interaction.response.send_message("You do not have enough cookies to give!")
+            return False
 
         self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies - amount)
+        return True
 
 
 async def setup(bot):
