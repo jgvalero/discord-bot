@@ -85,7 +85,7 @@ class Database:
                 """,
                 (user_id, guild_id)
             )
-        return self.cursor.fetchone()[0]
+        return self.cursor.fetchone()
 
     def set_value(self, user_id: str, guild_id: str, table: str, column: str, value: str | int):
         with self.conn:
