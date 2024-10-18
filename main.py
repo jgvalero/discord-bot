@@ -43,7 +43,7 @@ async def main():
     logger = logging.getLogger("discord")
     logger.setLevel(logging.INFO)
 
-    handler = logging.handlers.RotatingFileHandler(
+    file_handler = logging.handlers.RotatingFileHandler(
         filename="discord.log",
         encoding="utf-8",
         maxBytes=32 * 1024 * 1024,
@@ -53,8 +53,12 @@ async def main():
     formatter = logging.Formatter(
         "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
     )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
     if not load_dotenv():
         print("Could not locate .env!")
@@ -63,7 +67,7 @@ async def main():
     guild_id = os.environ["GUILD_ID"]
 
     async with ClientSession() as our_client:
-       with Database("data/users.db") as db:
+        with Database("data/users.db") as db:
             exts = ["cookies"]
             intents = discord.Intents.default()
             intents.message_content = True

@@ -77,7 +77,19 @@ class Database:
                 (user_id, guild_id)
             )
 
+    def user_exists(self, user_id: str, guild_id: str) -> bool:
+        self.cursor.execute(
+            """
+            SELECT 1 FROM users WHERE user_id = ? AND guild_id = ?;
+            """,
+            (user_id, guild_id)
+        )
+        return self.cursor.fetchone() is not None
+
     def get_value(self, user_id: str, guild_id: str, table: str, column: str):
+        if not self.user_exists(user_id, guild_id):
+            self.create_user(user_id, guild_id)
+
         with self.conn:
             self.cursor.execute(
                 f"""
@@ -88,6 +100,9 @@ class Database:
         return self.cursor.fetchone()
 
     def set_value(self, user_id: str, guild_id: str, table: str, column: str, value: str | int):
+        if not self.user_exists(user_id, guild_id):
+            self.create_user(user_id, guild_id)
+
         with self.conn:
             self.cursor.execute(
                 f"""
