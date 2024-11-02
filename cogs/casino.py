@@ -4,13 +4,10 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database import DatabaseSingleton
-
 
 class Casino(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-        self.db = DatabaseSingleton("data/users.db")
 
     @app_commands.command()
     async def slots(self, interaction: discord.Interaction, wager: int = 1):
@@ -18,19 +15,16 @@ class Casino(commands.GroupCog):
 
         user_cookies = 0
         if interaction.guild:
-            user_cookies = self.db.get_value(
-                interaction.user.id, interaction.guild.id, "cookies"
+            user_cookies = self.bot.database.get_value(
+                "cookies", "cookies", interaction.user.id, interaction.guild.id
             )
             if user_cookies < wager:
                 return await interaction.response.send_message(
                     "You don't have enough cookies to make this wager!"
                 )
             else:
-                self.db.set_value(
-                    interaction.user.id,
-                    interaction.guild.id,
-                    "cookies",
-                    user_cookies - wager,
+                self.bot.database.set_value(
+                    "cookies", "cookies", interaction.user.id, interaction.guild.id, user_cookies - wager
                 )
 
         SYMBOLS = ["🍉", "🍊", "🍋", "🍌", "🍒"]
@@ -42,11 +36,8 @@ class Casino(commands.GroupCog):
             if wheel1 == wheel2 == wheel3:
                 if interaction.guild:
                     payout = wager * 100
-                    self.db.set_value(
-                        interaction.user.id,
-                        interaction.guild.id,
-                        "cookies",
-                        user_cookies + payout,
+                    self.bot.database.set_value(
+                        "cookies", "cookies", interaction.user.id, interaction.guild.id, user_cookies + payout
                     )
                     return f"You won! Payout: {payout}"
             else:
@@ -60,9 +51,9 @@ class Casino(commands.GroupCog):
     async def blackjack(self, interaction: discord.Interaction, wager: int = 1):
         """Starts a game of blackjack with a wager!"""
 
-        user_cookies = self.db.get_value(
-            interaction.user.id, interaction.guild.id, "cookies"
-        )
+        user_cookies = self.bot.database.get_value(
+                        "cookies", "cookies", interaction.user.id, interaction.guild.id
+                    )
         if user_cookies < wager:
             return await interaction.response.send_message(
                 "You don't have enough cookies to make this wager!"
