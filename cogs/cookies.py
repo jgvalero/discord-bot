@@ -53,6 +53,9 @@ class Cookies(commands.GroupCog):
     ):
         """Give your cookies to someone else!"""
         if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
             return
 
         if amount <= 0:
@@ -74,17 +77,30 @@ class Cookies(commands.GroupCog):
             f"You gave {amount} cookies to {recipient.display_name}!"
         )
 
-    # @app_commands.command()
-    # @commands.has_permissions(administrator=True)
-    # async def set(self, interaction: discord.Interaction, member: discord.Member, amount: int):
-    #     """Set the amount of cookies someone has!"""
-    #     if interaction.guild is None:
-    #         raise BadArgument()
+    @app_commands.command()
+    @commands.has_permissions(administrator=True)
+    async def set(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        amount: int,
+    ):
+        """Set the amount of cookies someone has!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
 
-    #     self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", amount)
-    #     await interaction.response.send_message(
-    #         f"{member.display_name} now has {amount} cookies!"
-    #     )
+        user_id = str(member.id)
+        guild_id = str(interaction.guild.id)
+
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", amount
+        )
+        await interaction.response.send_message(
+            f"{member.display_name} now has {amount} cookies!"
+        )
 
     # @app_commands.command()
     # async def mute(self, interaction: discord.Interaction, member: discord.Member):
