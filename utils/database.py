@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Optional, Type
 
 
 class Database:
@@ -10,7 +11,12 @@ class Database:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        exc_tb: Optional[type],
+    ) -> None:
         self.conn.close()
 
     def create_tables(self):
@@ -60,21 +66,21 @@ class Database:
                 INSERT OR IGNORE INTO users (user_id, guild_id)
                 VALUES (?, ?);
                 """,
-                (user_id, guild_id)
+                (user_id, guild_id),
             )
             self.cursor.execute(
                 """
                 INSERT OR IGNORE INTO fishing (user_id, guild_id)
                 VALUES (?, ?);
                 """,
-                (user_id, guild_id)
+                (user_id, guild_id),
             )
             self.cursor.execute(
                 """
                 INSERT OR IGNORE INTO cookies (user_id, guild_id)
                 VALUES (?, ?);
                 """,
-                (user_id, guild_id)
+                (user_id, guild_id),
             )
 
     def user_exists(self, user_id: str, guild_id: str) -> bool:
@@ -82,7 +88,7 @@ class Database:
             """
             SELECT 1 FROM users WHERE user_id = ? AND guild_id = ?;
             """,
-            (user_id, guild_id)
+            (user_id, guild_id),
         )
         return self.cursor.fetchone() is not None
 
@@ -95,11 +101,18 @@ class Database:
                 f"""
                 SELECT {column} FROM {table} WHERE user_id = ? AND guild_id = ?;
                 """,
-                (user_id, guild_id)
+                (user_id, guild_id),
             )
         return self.cursor.fetchone()
 
-    def set_value(self, user_id: str, guild_id: str, table: str, column: str, value: str | int):
+    def set_value(
+        self,
+        user_id: str,
+        guild_id: str,
+        table: str,
+        column: str,
+        value: str | int,
+    ):
         if not self.user_exists(user_id, guild_id):
             self.create_user(user_id, guild_id)
 
@@ -108,13 +121,5 @@ class Database:
                 f"""
                 UPDATE {table} SET {column} = ? WHERE user_id = ? AND guild_id = ?
                 """,
-                (value, user_id, guild_id)
+                (value, user_id, guild_id),
             )
-
-# if __name__ == "__main__":
-#     db = Database("data/test.db")
-#     db.create_user("12345", "54321")
-#     value = db.get_value("cookies", "total", "12345", "54321")
-#     value = db.set_value("cookies", "total", "12345", "54321", 10)
-#     value = db.get_value("cookies", "total", "12345", "54321")
-#     print(value)
