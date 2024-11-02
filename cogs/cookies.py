@@ -24,25 +24,54 @@ class Cookies(commands.GroupCog):
             f"{member.display_name} has {cookies} cookies!"
         )
 
-    # @app_commands.command()
-    # async def leaderboard(self, interaction: discord.Interaction):
-    #     """Check the leaderboard for the guild!"""
-    #     if interaction.guild is not None:
-    #         # rows = self.db.get_leaderboard(interaction.guild.id)
-    #         if not rows:
-    #             return await interaction.response.send_message(
-    #                 "No one has any cookies yet!"
-    #             )
+    @app_commands.command()
+    async def leaderboard(self, interaction: discord.Interaction):
+        """Show the cookie leaderboard for this server!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
 
-    #         leaderboard = "Leaderboard:\n"
-    #         for index, row in enumerate(rows, start=1):
-    #             member = interaction.guild.get_member(row[0])
-    #             if member is not None:
-    #                 leaderboard += (
-    #                     f"{index}. {member.display_name} - {row[1]} cookies\n"
-    #                 )
+        guild_id = str(interaction.guild.id)
+        cursor = self.bot.database.cursor
+        cursor.execute(
+            """
+            SELECT user_id, cookies
+            FROM cookies
+            WHERE guild_id = ?
+            ORDER BY cookies DESC
+            LIMIT 10
+            """,
+            (guild_id,),
+        )
 
-    #         await interaction.response.send_message(leaderboard)
+        rows = cursor.fetchall()
+
+        if not rows:
+            await interaction.response.send_message(
+                "No one has any cookies yet!", ephemeral=True
+            )
+            return
+
+        embed = discord.Embed(
+            title="🍪 Cookie Leaderboard",
+            description="Top 10 Cookie Collectors!",
+            color=discord.Color.gold(),
+        )
+
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+
+        for index, (user_id, cookies) in enumerate(rows, start=1):
+            member = interaction.guild.get_member(int(user_id))
+            if member:
+                rank = medals.get(index, f"#{index}")
+                name = f"{rank} {member.display_name}"
+                embed.add_field(
+                    name=name, value=f"{cookies:,} cookies", inline=False
+                )
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     async def give(
