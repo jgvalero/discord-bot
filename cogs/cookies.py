@@ -1,76 +1,135 @@
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands.errors import BadArgument
+
+from main import DiscordBot
 
 
 class Cookies(commands.GroupCog):
-    def __init__(self, bot):
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     """Event that runs when the bot has connected to the Discord API"""
-    #     for guild in self.bot.guilds:
-    #         for member in guild.members:
-    #             self.bot.database.create_user(member.id, guild.id)
+    @app_commands.command()
+    async def amount(
+        self, interaction: discord.Interaction, member: discord.User
+    ):
+        """Check how many cookies you or another user have!"""
+        if interaction.guild is None:
+            return
+
+        cookies = await self.get_cookies(
+            str(member.id), str(interaction.guild.id)
+        )
+        await interaction.response.send_message(
+            f"{member.display_name} has {cookies} cookies!"
+        )
 
     @app_commands.command()
-    async def amount(self, interaction: discord.Interaction, member: discord.User):
-        """Check how many cookies you or another user have!"""
-        cookies = await self.get_cookies(interaction, member)
-        await interaction.response.send_message(f"{member.display_name} has {cookies} cookies!")
+    async def leaderboard(self, interaction: discord.Interaction):
+        """Show the cookie leaderboard for this server!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
 
-    # @app_commands.command()
-    # async def leaderboard(self, interaction: discord.Interaction):
-    #     """Check the leaderboard for the guild!"""
-    #     if interaction.guild is not None:
-    #         # rows = self.db.get_leaderboard(interaction.guild.id)
-    #         if not rows:
-    #             return await interaction.response.send_message(
-    #                 "No one has any cookies yet!"
-    #             )
+        guild_id = str(interaction.guild.id)
+        cursor = self.bot.database.cursor
+        cursor.execute(
+            """
+            SELECT user_id, cookies
+            FROM cookies
+            WHERE guild_id = ?
+            ORDER BY cookies DESC
+            LIMIT 10
+            """,
+            (guild_id,),
+        )
 
-    #         leaderboard = "Leaderboard:\n"
-    #         for index, row in enumerate(rows, start=1):
-    #             member = interaction.guild.get_member(row[0])
-    #             if member is not None:
-    #                 leaderboard += (
-    #                     f"{index}. {member.display_name} - {row[1]} cookies\n"
-    #                 )
+        rows = cursor.fetchall()
 
-    #         await interaction.response.send_message(leaderboard)
+        if not rows:
+            await interaction.response.send_message(
+                "No one has any cookies yet!", ephemeral=True
+            )
+            return
 
-    # @app_commands.command()
-    # async def give(self, interaction: discord.Interaction, recipient: discord.Member, amount: int):
-    #     """Give your cookies to someone else!"""
-    #     sender = interaction.user
-    #     if amount <= 0:
-    #         return await interaction.response.send_message(
-    #             "You can't give someone a negative amount of cookies!"
-    #         )
+        embed = discord.Embed(
+            title="🍪 Cookie Leaderboard",
+            description="Top 10 Cookie Collectors!",
+            color=discord.Color.gold(),
+        )
 
-    #     if not await self.remove_cookies(interaction, sender, amount):
-    #         return await interaction.response.send_message("You do not have enough cookies to give!")
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
 
-    #     await self.add_cookies(interaction, recipient, amount)
-    #     await interaction.response.send_message(
-    #         f"You gave {amount} cookies to {recipient.display_name}!"
-    #     )
+        for index, (user_id, cookies) in enumerate(rows, start=1):
+            member = interaction.guild.get_member(int(user_id))
+            if member:
+                rank = medals.get(index, f"#{index}")
+                name = f"{rank} {member.display_name}"
+                embed.add_field(
+                    name=name, value=f"{cookies:,} cookies", inline=False
+                )
 
-    # @app_commands.command()
-    # @commands.has_permissions(administrator=True)
-    # async def set(self, interaction: discord.Interaction, member: discord.Member, amount: int):
-    #     """Set the amount of cookies someone has!"""
-    #     if interaction.guild is None:
-    #         raise BadArgument()
+        await interaction.response.send_message(embed=embed)
 
-    #     self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", amount)
-    #     await interaction.response.send_message(
-    #         f"{member.display_name} now has {amount} cookies!"
-    #     )
+    @app_commands.command()
+    async def give(
+        self,
+        interaction: discord.Interaction,
+        recipient: discord.Member,
+        amount: int,
+    ):
+        """Give your cookies to someone else!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        if amount <= 0:
+            return await interaction.response.send_message(
+                "You can't give someone a negative amount of cookies!"
+            )
+
+        sender_id = str(interaction.user.id)
+        recipient_id = str(recipient.id)
+        guild_id = str(interaction.guild.id)
+
+        if not await self.remove_cookies(sender_id, guild_id, amount):
+            return await interaction.response.send_message(
+                "You do not have enough cookies to give!"
+            )
+
+        await self.add_cookies(recipient_id, guild_id, amount)
+        await interaction.response.send_message(
+            f"You gave {amount} cookies to {recipient.display_name}!"
+        )
+
+    @app_commands.command()
+    @commands.has_permissions(administrator=True)
+    async def set(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        amount: int,
+    ):
+        """Set the amount of cookies someone has!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        user_id = str(member.id)
+        guild_id = str(interaction.guild.id)
+
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", amount
+        )
+        await interaction.response.send_message(
+            f"{member.display_name} now has {amount} cookies!"
+        )
 
     # @app_commands.command()
     # async def mute(self, interaction: discord.Interaction, member: discord.Member):
@@ -181,49 +240,85 @@ class Cookies(commands.GroupCog):
     #         f"{winner.display_name} wins and receives {wager} cookies from {loser.display_name}!"
     #     )
 
-    # @app_commands.command()
-    # async def stats(self, interaction: discord.Interaction, member: discord.User):
-    #     """Check a member's stats!"""
-    #     stats = self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "*")
-    #     # Cookies, total, max
-    #     print(stats)
-    #     embed = discord.Embed(title=f"{member}'s stats")
-    #     embed.add_field(name="Cookies", value=stats[2], inline=True)
-    #     embed.add_field(name="Total Cookies Earned", value=stats[3], inline=True)
-    #     embed.add_field(name="Highest amount of cookies", value=stats[4], inline=True)
-    #     await interaction.response.send_message(embed=embed)
+    @app_commands.command()
+    async def stats(
+        self, interaction: discord.Interaction, member: discord.User
+    ):
+        """Check a member's stats!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        user_id = str(member.id)
+        guild_id = str(interaction.guild.id)
+
+        stats = self.bot.database.get_value(user_id, guild_id, "cookies", "*")
+
+        if not stats:
+            await interaction.response.send_message(
+                f"{member.display_name} has no cookie stats yet!",
+                ephemeral=True,
+            )
+            return
+
+        embed = discord.Embed(
+            title=f"{member.display_name}'s Cookie Stats",
+            color=discord.Color.gold(),
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+
+        embed.add_field(name="Current Cookies", value=stats[2], inline=True)
+        embed.add_field(name="Total Earned", value=stats[3], inline=True)
+        embed.add_field(name="Highest Amount", value=stats[4], inline=True)
+
+        await interaction.response.send_message(embed=embed)
 
     # Helper Functions
-    async def get_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member) -> int:
-        if interaction.guild is None:
-            raise BadArgument()
+    async def get_cookies(self, user_id: str, guild_id: str) -> int:
+        """Get current cookie count for a user"""
+        result = self.bot.database.get_value(
+            user_id, guild_id, "cookies", "cookies"
+        )
+        return result[0] if result else 0
 
-        return self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies")[0]
+    async def add_cookies(
+        self, user_id: str, guild_id: str, amount: int
+    ) -> None:
+        """Add cookies to a user's balance and update stats"""
+        [cookies, total, max_cookies] = self.bot.database.get_value(
+            user_id, guild_id, "cookies", "cookies, total, max"
+        )
 
-    async def add_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int):
-        if interaction.guild is None:
-            raise BadArgument()
+        new_total = cookies + amount
+        new_lifetime = total + amount
 
-        [cookies, total, max] =  self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies, total, max")
-        cookies += amount
-        total += amount
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", new_total
+        )
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "total", new_lifetime
+        )
 
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies)
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "total", total)
-        if cookies > max:
-            self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "max", cookies)
+        if new_total > max_cookies:
+            self.bot.database.set_value(
+                user_id, guild_id, "cookies", "max", new_total
+            )
 
-    async def remove_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int) -> bool:
-        if interaction.guild is None:
-            raise BadArgument()
-
-        cookies = await self.get_cookies(interaction, member)
-        if cookies < amount:
+    async def remove_cookies(
+        self, user_id: str, guild_id: str, amount: int
+    ) -> bool:
+        """Remove cookies from a user's balance"""
+        current = await self.get_cookies(user_id, guild_id)
+        if current < amount:
             return False
 
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies - amount)
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", current - amount
+        )
         return True
 
 
-async def setup(bot):
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(Cookies(bot))
