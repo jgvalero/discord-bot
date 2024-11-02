@@ -1,27 +1,28 @@
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands.errors import BadArgument
+
+from main import DiscordBot
 
 
 class Cookies(commands.GroupCog):
-    def __init__(self, bot):
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     """Event that runs when the bot has connected to the Discord API"""
-    #     for guild in self.bot.guilds:
-    #         for member in guild.members:
-    #             self.bot.database.create_user(member.id, guild.id)
-
     @app_commands.command()
-    async def amount(self, interaction: discord.Interaction, member: discord.User):
+    async def amount(
+        self, interaction: discord.Interaction, member: discord.User
+    ):
         """Check how many cookies you or another user have!"""
-        cookies = await self.get_cookies(interaction, member)
-        await interaction.response.send_message(f"{member.display_name} has {cookies} cookies!")
+        if interaction.guild is None:
+            return
+
+        cookies = await self.get_cookies(
+            str(member.id), str(interaction.guild.id)
+        )
+        await interaction.response.send_message(
+            f"{member.display_name} has {cookies} cookies!"
+        )
 
     # @app_commands.command()
     # async def leaderboard(self, interaction: discord.Interaction):
@@ -194,36 +195,49 @@ class Cookies(commands.GroupCog):
     #     await interaction.response.send_message(embed=embed)
 
     # Helper Functions
-    async def get_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member) -> int:
-        if interaction.guild is None:
-            raise BadArgument()
+    async def get_cookies(self, user_id: str, guild_id: str) -> int:
+        """Get current cookie count for a user"""
+        result = self.bot.database.get_value(
+            user_id, guild_id, "cookies", "cookies"
+        )
+        return result[0] if result else 0
 
-        return self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies")[0]
+    async def add_cookies(
+        self, user_id: str, guild_id: str, amount: int
+    ) -> None:
+        """Add cookies to a user's balance and update stats"""
+        [cookies, total, max_cookies] = self.bot.database.get_value(
+            user_id, guild_id, "cookies", "cookies, total, max"
+        )
 
-    async def add_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int):
-        if interaction.guild is None:
-            raise BadArgument()
+        new_total = cookies + amount
+        new_lifetime = total + amount
 
-        [cookies, total, max] =  self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "cookies, total, max")
-        cookies += amount
-        total += amount
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", new_total
+        )
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "total", new_lifetime
+        )
 
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies)
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "total", total)
-        if cookies > max:
-            self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "max", cookies)
+        if new_total > max_cookies:
+            self.bot.database.set_value(
+                user_id, guild_id, "cookies", "max", new_total
+            )
 
-    async def remove_cookies(self, interaction: discord.Interaction, member: discord.User | discord.Member, amount: int) -> bool:
-        if interaction.guild is None:
-            raise BadArgument()
-
-        cookies = await self.get_cookies(interaction, member)
-        if cookies < amount:
+    async def remove_cookies(
+        self, user_id: str, guild_id: str, amount: int
+    ) -> bool:
+        """Remove cookies from a user's balance"""
+        current = await self.get_cookies(user_id, guild_id)
+        if current < amount:
             return False
 
-        self.bot.database.set_value(member.id, interaction.guild.id, "cookies", "cookies", cookies - amount)
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", current - amount
+        )
         return True
 
 
-async def setup(bot):
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(Cookies(bot))
