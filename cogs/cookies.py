@@ -211,17 +211,40 @@ class Cookies(commands.GroupCog):
     #         f"{winner.display_name} wins and receives {wager} cookies from {loser.display_name}!"
     #     )
 
-    # @app_commands.command()
-    # async def stats(self, interaction: discord.Interaction, member: discord.User):
-    #     """Check a member's stats!"""
-    #     stats = self.bot.database.get_value(member.id, interaction.guild.id, "cookies", "*")
-    #     # Cookies, total, max
-    #     print(stats)
-    #     embed = discord.Embed(title=f"{member}'s stats")
-    #     embed.add_field(name="Cookies", value=stats[2], inline=True)
-    #     embed.add_field(name="Total Cookies Earned", value=stats[3], inline=True)
-    #     embed.add_field(name="Highest amount of cookies", value=stats[4], inline=True)
-    #     await interaction.response.send_message(embed=embed)
+    @app_commands.command()
+    async def stats(
+        self, interaction: discord.Interaction, member: discord.User
+    ):
+        """Check a member's stats!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        user_id = str(member.id)
+        guild_id = str(interaction.guild.id)
+
+        stats = self.bot.database.get_value(user_id, guild_id, "cookies", "*")
+
+        if not stats:
+            await interaction.response.send_message(
+                f"{member.display_name} has no cookie stats yet!",
+                ephemeral=True,
+            )
+            return
+
+        embed = discord.Embed(
+            title=f"{member.display_name}'s Cookie Stats",
+            color=discord.Color.gold(),
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+
+        embed.add_field(name="Current Cookies", value=stats[2], inline=True)
+        embed.add_field(name="Total Earned", value=stats[3], inline=True)
+        embed.add_field(name="Highest Amount", value=stats[4], inline=True)
+
+        await interaction.response.send_message(embed=embed)
 
     # Helper Functions
     async def get_cookies(self, user_id: str, guild_id: str) -> int:
