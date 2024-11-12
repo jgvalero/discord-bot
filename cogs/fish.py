@@ -22,7 +22,10 @@ class Fish(commands.GroupCog):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5.0, key=lambda i: (i.guild_id, i.user.id))
-    async def cast(self, interaction: discord.Interaction) -> None:
+    @app_commands.describe(use_bait="Use bait to guarantee a catch")
+    async def cast(
+        self, interaction: discord.Interaction, use_bait: bool = False
+    ) -> None:
         """CAST! CAST! CAST!"""
         # Ensure command is used in a server context
         if interaction.guild is None:
@@ -35,6 +38,27 @@ class Fish(commands.GroupCog):
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
 
+        # Get current bait count
+        bait_count = self.bot.database.get_value(
+            user_id, guild_id, "fishing", "bait"
+        )[0]
+
+        # Check if user wants to use bait and has any
+        if use_bait:
+            if bait_count <= 0:
+                await interaction.response.send_message(
+                    "You don't have any bait! Buy some from the shop with `/fish shop`",
+                    ephemeral=True,
+                )
+                return
+            # Consume one bait
+            new_bait_count = bait_count - 1
+            self.bot.database.set_value(
+                user_id, guild_id, "fishing", "bait", new_bait_count
+            )
+        else:
+            new_bait_count = bait_count
+
         # Increment the total fishing attempts counter
         attempts = self.bot.database.get_value(
             user_id, guild_id, "fishing", "attempts"
@@ -43,8 +67,8 @@ class Fish(commands.GroupCog):
             user_id, guild_id, "fishing", "attempts", attempts + 1
         )
 
-        # Determine if the cast was successful based on catch chance
-        if random.random() < self.catch_chance:
+        # Determine if the cast was successful based on catch chance or bait
+        if use_bait or random.random() < self.catch_chance:
             # Reset dry streak on successful catch
             self.bot.database.set_value(
                 user_id, guild_id, "fishing", "streak", 0
@@ -110,6 +134,12 @@ class Fish(commands.GroupCog):
                 value=f"{random_fish['price']} cookies",
                 inline=True,
             )
+            if use_bait:
+                embed.add_field(
+                    name="Bait Used",
+                    value=f"Remaining bait: {new_bait_count}",
+                    inline=False,
+                )
 
             await interaction.response.send_message(embed=embed)
         else:
