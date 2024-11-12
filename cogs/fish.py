@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from typing import Literal
 
 import discord
 from discord import app_commands
@@ -184,9 +185,69 @@ class Fish(commands.GroupCog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
-    async def buy(self, interaction: discord.Interaction) -> None:
-        """Buy from the shop!"""
-        await interaction.response.send_message("Buy not implemented")
+    @app_commands.describe(
+        item="Choose an item to buy", amount="How many items to buy (1-100)"
+    )
+    async def buy(
+        self,
+        interaction: discord.Interaction,
+        item: Literal["Big Dawg's Delectable Bait"],
+        amount: app_commands.Range[int, 1, 100] = 1,
+    ) -> None:
+        """Buy items from the shop!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        shop_items = {
+            "Big Dawg's Delectable Bait": {
+                "price": 50,
+                "name": "Bait",
+                "value": "bait",
+            }
+        }
+
+        if item not in shop_items:
+            await interaction.response.send_message(
+                "Invalid item! Use `/fish shop` to see available items.",
+                ephemeral=True,
+            )
+            return
+
+        item_data = shop_items[item]
+        total_cost = item_data["price"] * amount
+
+        user_id = str(interaction.user.id)
+        guild_id = str(interaction.guild.id)
+
+        cookies = self.bot.database.get_value(
+            user_id, guild_id, "cookies", "cookies"
+        )[0]
+
+        if cookies < total_cost:
+            await interaction.response.send_message(
+                f"You don't have enough cookies! You need {total_cost} cookies, but you only have {cookies}.",
+                ephemeral=True,
+            )
+            return
+
+        self.bot.database.set_value(
+            user_id, guild_id, "cookies", "cookies", cookies - total_cost
+        )
+
+        current_bait = self.bot.database.get_value(
+            user_id, guild_id, "fishing", "bait"
+        )[0]
+        self.bot.database.set_value(
+            user_id, guild_id, "fishing", "bait", current_bait + amount
+        )
+
+        await interaction.response.send_message(
+            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it!"
+            f"You now have {cookies - total_cost} cookies and {current_bait + amount} bait!"
+        )
 
     @cast.error
     async def on_cast_error(
