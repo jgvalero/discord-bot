@@ -155,7 +155,33 @@ class Fish(commands.GroupCog):
     @app_commands.command()
     async def shop(self, interaction: discord.Interaction) -> None:
         """Check shop prices!"""
-        await interaction.response.send_message("Shop not implemented")
+        embed = discord.Embed(
+            title="Big Dawg's Fishing Shop",
+            description="Buy items to improve your fishing! No refunds!",
+            color=discord.Color.blue(),
+        )
+
+        embed.add_field(
+            name="Big Dawg's Delectable Bait - 50 cookies",
+            value="Guarantees a catch on your next cast! Safe for human consumption!",
+            inline=False,
+        )
+
+        # Get user's current bait count
+        if interaction.guild:
+            bait_count = self.bot.database.get_value(
+                str(interaction.user.id),
+                str(interaction.guild.id),
+                "fishing",
+                "bait",
+            )[0]
+            embed.add_field(
+                name="Your Bait",
+                value=f"You currently have {bait_count} bait",
+                inline=False,
+            )
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     async def buy(self, interaction: discord.Interaction) -> None:
