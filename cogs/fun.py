@@ -25,7 +25,7 @@ class Fun(commands.Cog):
 
         question = random.choice(self.trivia_questions)
         choices = "\n".join(
-            f"{i+1}. {choice}" for i, choice in enumerate(question["choices"])
+            f"{i + 1}. {choice}" for i, choice in enumerate(question["choices"])
         )
         await ctx.send(
             f"{question['question']}\nChoices:\n{choices}\nYou can answer with the number or the text!"

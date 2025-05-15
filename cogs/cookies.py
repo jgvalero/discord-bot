@@ -10,16 +10,12 @@ class Cookies(commands.GroupCog):
         self.bot = bot
 
     @app_commands.command()
-    async def amount(
-        self, interaction: discord.Interaction, member: discord.User
-    ):
+    async def amount(self, interaction: discord.Interaction, member: discord.User):
         """Check how many cookies you or another user have!"""
         if interaction.guild is None:
             return
 
-        cookies = await self.get_cookies(
-            str(member.id), str(interaction.guild.id)
-        )
+        cookies = await self.get_cookies(str(member.id), str(interaction.guild.id))
         await interaction.response.send_message(
             f"{member.display_name} has {cookies} cookies!"
         )
@@ -67,9 +63,7 @@ class Cookies(commands.GroupCog):
             if member:
                 rank = medals.get(index, f"#{index}")
                 name = f"{rank} {member.display_name}"
-                embed.add_field(
-                    name=name, value=f"{cookies:,} cookies", inline=False
-                )
+                embed.add_field(name=name, value=f"{cookies:,} cookies", inline=False)
 
         await interaction.response.send_message(embed=embed)
 
@@ -124,9 +118,7 @@ class Cookies(commands.GroupCog):
         user_id = str(member.id)
         guild_id = str(interaction.guild.id)
 
-        self.bot.database.set_value(
-            user_id, guild_id, "cookies", "cookies", amount
-        )
+        self.bot.database.set_value(user_id, guild_id, "cookies", "cookies", amount)
         await interaction.response.send_message(
             f"{member.display_name} now has {amount} cookies!"
         )
@@ -241,9 +233,7 @@ class Cookies(commands.GroupCog):
     #     )
 
     @app_commands.command()
-    async def stats(
-        self, interaction: discord.Interaction, member: discord.User
-    ):
+    async def stats(self, interaction: discord.Interaction, member: discord.User):
         """Check a member's stats!"""
         if interaction.guild is None:
             await interaction.response.send_message(
@@ -278,14 +268,10 @@ class Cookies(commands.GroupCog):
     # Helper Functions
     async def get_cookies(self, user_id: str, guild_id: str) -> int:
         """Get current cookie count for a user"""
-        result = self.bot.database.get_value(
-            user_id, guild_id, "cookies", "cookies"
-        )
+        result = self.bot.database.get_value(user_id, guild_id, "cookies", "cookies")
         return result[0] if result else 0
 
-    async def add_cookies(
-        self, user_id: str, guild_id: str, amount: int
-    ) -> None:
+    async def add_cookies(self, user_id: str, guild_id: str, amount: int) -> None:
         """Add cookies to a user's balance and update stats"""
         [cookies, total, max_cookies] = self.bot.database.get_value(
             user_id, guild_id, "cookies", "cookies, total, max"
@@ -294,21 +280,13 @@ class Cookies(commands.GroupCog):
         new_total = cookies + amount
         new_lifetime = total + amount
 
-        self.bot.database.set_value(
-            user_id, guild_id, "cookies", "cookies", new_total
-        )
-        self.bot.database.set_value(
-            user_id, guild_id, "cookies", "total", new_lifetime
-        )
+        self.bot.database.set_value(user_id, guild_id, "cookies", "cookies", new_total)
+        self.bot.database.set_value(user_id, guild_id, "cookies", "total", new_lifetime)
 
         if new_total > max_cookies:
-            self.bot.database.set_value(
-                user_id, guild_id, "cookies", "max", new_total
-            )
+            self.bot.database.set_value(user_id, guild_id, "cookies", "max", new_total)
 
-    async def remove_cookies(
-        self, user_id: str, guild_id: str, amount: int
-    ) -> bool:
+    async def remove_cookies(self, user_id: str, guild_id: str, amount: int) -> bool:
         """Remove cookies from a user's balance"""
         current = await self.get_cookies(user_id, guild_id)
         if current < amount:

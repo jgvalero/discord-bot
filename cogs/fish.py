@@ -39,9 +39,9 @@ class Fish(commands.GroupCog):
         guild_id = str(interaction.guild.id)
 
         # Get current bait count
-        bait_count = self.bot.database.get_value(
-            user_id, guild_id, "fishing", "bait"
-        )[0]
+        bait_count = self.bot.database.get_value(user_id, guild_id, "fishing", "bait")[
+            0
+        ]
 
         # Check if user wants to use bait and has any
         if use_bait:
@@ -70,9 +70,7 @@ class Fish(commands.GroupCog):
         # Determine if the cast was successful based on catch chance or bait
         if use_bait or random.random() < self.catch_chance:
             # Reset dry streak on successful catch
-            self.bot.database.set_value(
-                user_id, guild_id, "fishing", "streak", 0
-            )
+            self.bot.database.set_value(user_id, guild_id, "fishing", "streak", 0)
 
             # Select a random fish based on their chance weights
             random_fish = random.choices(
@@ -117,9 +115,7 @@ class Fish(commands.GroupCog):
             self.bot.database.set_value(
                 user_id, guild_id, "cookies", "total", new_total
             )
-            self.bot.database.set_value(
-                user_id, guild_id, "cookies", "max", new_max
-            )
+            self.bot.database.set_value(user_id, guild_id, "cookies", "max", new_max)
 
             # Create success embed message
             embed = discord.Embed(
@@ -168,9 +164,7 @@ class Fish(commands.GroupCog):
             )
 
             # Create failure embed message
-            embed = discord.Embed(
-                title="Tough luck!", color=discord.Color.red()
-            )
+            embed = discord.Embed(title="Tough luck!", color=discord.Color.red())
             embed.add_field(
                 name="Current dry streak",
                 value=f"{new_streak} failed catches",
@@ -252,9 +246,9 @@ class Fish(commands.GroupCog):
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
 
-        cookies = self.bot.database.get_value(
-            user_id, guild_id, "cookies", "cookies"
-        )[0]
+        cookies = self.bot.database.get_value(user_id, guild_id, "cookies", "cookies")[
+            0
+        ]
 
         if cookies < total_cost:
             await interaction.response.send_message(
