@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Joel",
+    "price": 10,
+    "chance": 60
+  },
+  {
+    "name": "Ricardo",
+    "price": 20,
+    "chance": 15
+  },
+  {
+    "name": "Hector",
+    "price": 50,
+    "chance": 10
+  },
+  {
+    "name": "Benjamin",
+    "price": 75,
+    "chance": 5
+  },
+  {
+    "name": "Felix",
+    "price": 100,
+    "chance": 5
+  },
+  {
+    "name": "Edward",
+    "price": 1000,
+    "chance": 4
+  },
+  {
+    "name": "Pipe Bomb",
+    "price": -500,
+    "chance": 1
+  }
+]

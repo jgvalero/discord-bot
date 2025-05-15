@@ -23,6 +23,7 @@ websockets
 yarl
 yt-dlp
 python-dotenv
+aiosqlite
 
 isort
 black
