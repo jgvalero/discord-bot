@@ -4,10 +4,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from utils.money import Money
+
 
 class Casino(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
+        self.money = Money(bot.database)
 
     @app_commands.command()
     async def slots(self, interaction: discord.Interaction, wager: int = 1):
@@ -24,20 +27,9 @@ class Casino(commands.GroupCog):
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
 
-        user_cookies = self.bot.database.get_value(
-            user_id, guild_id, "cookies", "cookies"
-        )[0]
-        if user_cookies < wager:
+        if not self.money.lose(user_id, guild_id, wager):
             return await interaction.response.send_message(
                 "You don't have enough cookies to make this wager!"
-            )
-        else:
-            self.bot.database.set_value(
-                interaction.user.id,
-                interaction.guild.id,
-                "cookies",
-                "cookies",
-                user_cookies - wager,
             )
 
         SYMBOLS = ["🍉", "🍊", "🍋", "🍌", "🍒"]
@@ -49,13 +41,7 @@ class Casino(commands.GroupCog):
             if wheel1 == wheel2 == wheel3:
                 if interaction.guild:
                     payout = wager * 100
-                    self.bot.database.set_value(
-                        interaction.user.id,
-                        interaction.guild.id,
-                        "cookies",
-                        "cookies",
-                        user_cookies + payout,
-                    )
+                    self.money.earn(user_id, guild_id, payout)
                     return f"You won! Payout: {payout}"
             else:
                 return "Tough luck!"
