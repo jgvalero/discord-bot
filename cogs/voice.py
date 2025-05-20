@@ -7,6 +7,7 @@ import yt_dlp
 from discord import app_commands
 from discord.ext import commands
 
+import utils.tts
 from utils.voting import Voting
 
 genius_token = os.getenv("GENIUS_TOKEN")
@@ -290,6 +291,54 @@ class Music(commands.Cog):
             await interaction.response.send_message(
                 "You don't have a genius token! If you want to use this command make sure to add the genius token in the .env file!"
             )
+
+    @app_commands.command()
+    async def tts(self, interaction: discord.Interaction, message: str = ""):
+        """Play a TTS message!"""
+
+        if message == "":
+            return await interaction.response.send_message(
+                f"Current voices: {utils.tts.get_voices()}"
+            )
+
+        await self.ensure_voice(interaction)
+
+        voice = interaction.client.voice_clients[0]
+
+        async with interaction.channel.typing():
+            await interaction.response.send_message("Generating TTS...")
+            urls = await utils.tts.generate_tts(message)
+
+            if urls is None:
+                return await interaction.followup.send(
+                    "Woah there! You have exceeded past 100 characters!"
+                )
+
+            for url in urls:
+                # Get the TTS
+                player = await YTDLSource.from_url(url, loop=self.bot.loop)
+                player.volume = 1.0
+                player.author = interaction.user
+                player.voting = Voting()
+                self.song_queue.append(player)
+
+            for url in urls:
+                # Check if there is anything playing
+                if voice.is_playing():
+                    return await interaction.followup.send("Added TTS to queue!")
+
+                # Play the song and check queue after
+                voice.play(
+                    self.song_queue[0],
+                    after=lambda e: (
+                        print(f"Player error: {e}")
+                        if e
+                        else self.check_queue(interaction)
+                    ),
+                )
+
+                msg = await interaction.original_response()
+                await msg.edit(content="Now playing TTS!")
 
     # Functions
     def check_queue(self, interaction: discord.Interaction):
