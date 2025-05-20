@@ -8,6 +8,7 @@ from discord import app_commands
 from discord.ext import commands
 
 import utils.tts
+from utils.money import Money
 from utils.voting import Voting
 
 genius_token = os.getenv("GENIUS_TOKEN")
@@ -68,6 +69,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.song_queue = []
+        self.money = Money(bot.database)
 
     @app_commands.command()
     async def join(self, interaction: discord.Interaction):
@@ -294,7 +296,15 @@ class Music(commands.Cog):
 
     @app_commands.command()
     async def tts(self, interaction: discord.Interaction, message: str = ""):
-        """Play a TTS message!"""
+        """Play a TTS message! Costs 10 cookies!"""
+
+        user_id = interaction.user.id
+        guild_id = interaction.guild.id
+
+        if not self.money.lose(user_id, guild_id, 10):
+            return await interaction.response.send_message(
+                "You don't have enough cookies to use TTS!"
+            )
 
         if message == "":
             return await interaction.response.send_message(
