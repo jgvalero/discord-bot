@@ -43,7 +43,7 @@ def parse_input(input: str):
                     }
                 )
 
-            new_speaker = part.split(":")[0]
+            new_speaker = part.split(":")[0].lower()
             if new_speaker in voice_id:
                 current_speaker = new_speaker
                 current_message = [part.split(":")[1]]

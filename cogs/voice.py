@@ -321,11 +321,10 @@ class Music(commands.Cog):
                 player.voting = Voting()
                 self.song_queue.append(player)
 
+            for url in urls:
                 # Check if there is anything playing
                 if voice.is_playing():
-                    return await interaction.followup.send(
-                        f"Added {message['name']}'s speech to queue!"
-                    )
+                    return await interaction.followup.send("Added TTS to queue!")
 
                 # Play the song and check queue after
                 voice.play(
