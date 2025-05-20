@@ -309,6 +309,11 @@ class Music(commands.Cog):
             await interaction.response.send_message("Generating TTS...")
             urls = utils.tts.generate_tts(message)
 
+            if urls is None:
+                return await interaction.followup.send(
+                    "Woah there! You have exceeded past 100 characters!"
+                )
+
             for url in urls:
                 # Get the TTS
                 player = await YTDLSource.from_url(url, loop=self.bot.loop)

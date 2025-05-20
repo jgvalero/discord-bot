@@ -66,6 +66,10 @@ def parse_input(input: str):
 
 def generate_tts(input: str):
     messages = parse_input(input)
+
+    if get_count(messages) > 100:
+        return None
+
     urls = []
 
     for message in messages:
@@ -76,3 +80,7 @@ def generate_tts(input: str):
 
 def get_voices():
     return ", ".join(voice_id.keys())
+
+
+def get_count(messages):
+    return sum(len(item["message"]) for item in messages)
