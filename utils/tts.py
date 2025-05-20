@@ -1,6 +1,9 @@
+import asyncio
+import functools
 import json
 import os
 import sys
+import typing
 
 import requests
 from dotenv import load_dotenv
@@ -13,6 +16,14 @@ tts_monster_token = os.getenv("TTS_MONSTER")
 if os.path.exists("data/voices.json"):
     with open("data/voices.json", "r") as f:
         voice_id = json.load(f)
+
+
+def to_thread(func: typing.Callable) -> typing.Coroutine:
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        return await asyncio.to_thread(func, *args, **kwargs)
+
+    return wrapper
 
 
 def get_url(message: str) -> str:
@@ -64,6 +75,7 @@ def parse_input(input: str):
     return messages
 
 
+@to_thread
 def generate_tts(input: str):
     messages = parse_input(input)
 

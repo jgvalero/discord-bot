@@ -307,7 +307,7 @@ class Music(commands.Cog):
 
         async with interaction.channel.typing():
             await interaction.response.send_message("Generating TTS...")
-            urls = utils.tts.generate_tts(message)
+            urls = await utils.tts.generate_tts(message)
 
             if urls is None:
                 return await interaction.followup.send(
