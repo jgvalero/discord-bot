@@ -8,12 +8,14 @@ from discord import app_commands
 from discord.ext import commands
 
 from main import DiscordBot
+from utils.money import Money
 
 
 class Fish(commands.GroupCog):
     def __init__(self, bot: DiscordBot, catch_chance: float) -> None:
         self.bot = bot
         self.catch_chance = catch_chance
+        self.money = Money(bot.database)
         if os.path.exists("data/fishes.json"):
             with open("data/fishes.json", "r") as f:
                 self.fishes = json.load(f)
@@ -99,7 +101,7 @@ class Fish(commands.GroupCog):
 
             # Get current cookie stats
             cookies_result = self.bot.database.get_value(
-                user_id, guild_id, "cookies", "cookies, total, max"
+                user_id, guild_id, "cookies", "cookies, total_earned, max"
             )
             current_cookies, total_cookies, max_cookies = cookies_result
 
@@ -109,13 +111,7 @@ class Fish(commands.GroupCog):
             new_max = max(max_cookies, new_cookies)
 
             # Update cookie stats in database
-            self.bot.database.set_value(
-                user_id, guild_id, "cookies", "cookies", new_cookies
-            )
-            self.bot.database.set_value(
-                user_id, guild_id, "cookies", "total", new_total
-            )
-            self.bot.database.set_value(user_id, guild_id, "cookies", "max", new_max)
+            self.money.earn(user_id, guild_id, random_fish["price"])
 
             # Create success embed message
             embed = discord.Embed(
@@ -246,20 +242,11 @@ class Fish(commands.GroupCog):
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
 
-        cookies = self.bot.database.get_value(user_id, guild_id, "cookies", "cookies")[
-            0
-        ]
-
-        if cookies < total_cost:
-            await interaction.response.send_message(
-                f"You don't have enough cookies! You need {total_cost} cookies, but you only have {cookies}.",
+        if not self.money.lose(user_id, guild_id, total_cost):
+            return await interaction.response.send_message(
+                f"You don't have enough cookies! You need {total_cost} cookies, but you only have {self.money.get_money(user_id, guild_id)}.",
                 ephemeral=True,
             )
-            return
-
-        self.bot.database.set_value(
-            user_id, guild_id, "cookies", "cookies", cookies - total_cost
-        )
 
         current_bait = self.bot.database.get_value(
             user_id, guild_id, "fishing", "bait"
@@ -269,7 +256,7 @@ class Fish(commands.GroupCog):
         )
 
         await interaction.response.send_message(
-            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it! You now have {cookies - total_cost} cookies and {current_bait + amount} bait!"
+            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it! You now have {self.money.get_money(user_id, guild_id)} cookies and {current_bait + amount} bait!"
         )
 
     @cast.error

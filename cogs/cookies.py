@@ -261,7 +261,8 @@ class Cookies(commands.GroupCog):
 
         embed.add_field(name="Current Cookies", value=stats[2], inline=True)
         embed.add_field(name="Total Earned", value=stats[3], inline=True)
-        embed.add_field(name="Highest Amount", value=stats[4], inline=True)
+        embed.add_field(name="Total Lost", value=stats[4], inline=True)
+        embed.add_field(name="Highest Amount", value=stats[5], inline=True)
 
         await interaction.response.send_message(embed=embed)
 

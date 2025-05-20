@@ -52,7 +52,8 @@ class Database:
                     user_id INTEGER,
                     guild_id INTEGER,
                     cookies INTEGER DEFAULT 0,
-                    total INTEGER DEFAULT 0,
+                    total_earned INTEGER DEFAULT 0,
+                    total_lost INTEGER DEFAULT 0,
                     max INTEGER DEFAULT 0,
                     FOREIGN KEY (user_id, guild_id) REFERENCES users(user_id, guild_id)
                 );
