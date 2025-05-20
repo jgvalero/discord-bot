@@ -317,6 +317,7 @@ class Music(commands.Cog):
             for url in urls:
                 # Get the TTS
                 player = await YTDLSource.from_url(url, loop=self.bot.loop)
+                player.volume = 1.0
                 player.author = interaction.user
                 player.voting = Voting()
                 self.song_queue.append(player)
@@ -335,7 +336,6 @@ class Music(commands.Cog):
                         else self.check_queue(interaction)
                     ),
                 )
-                voice.source.volume = 1.0
 
                 msg = await interaction.original_response()
                 await msg.edit(content="Now playing TTS!")
