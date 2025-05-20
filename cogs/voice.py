@@ -336,6 +336,7 @@ class Music(commands.Cog):
                         else self.check_queue(interaction)
                     ),
                 )
+                voice.source.volume = 1.0
 
                 msg = await interaction.original_response()
                 await msg.edit(content="Now playing TTS!")
