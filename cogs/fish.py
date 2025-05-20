@@ -269,8 +269,7 @@ class Fish(commands.GroupCog):
         )
 
         await interaction.response.send_message(
-            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it!"
-            f"You now have {cookies - total_cost} cookies and {current_bait + amount} bait!"
+            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it! You now have {cookies - total_cost} cookies and {current_bait + amount} bait!"
         )
 
     @cast.error
