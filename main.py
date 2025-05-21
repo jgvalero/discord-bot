@@ -68,7 +68,7 @@ async def main():
 
     async with ClientSession() as our_client:
         with Database("data/users.db") as db:
-            exts = ["casino", "cookies", "fish", "fun", "moderation", "voice"]
+            exts = ["casino", "cookies", "fish", "moderation", "voice"]
             intents = discord.Intents.default()
             intents.message_content = True
             intents.presences = True
