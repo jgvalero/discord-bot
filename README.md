@@ -1,6 +1,6 @@
 # discord-bot
 
-Very simple discord bot!
+Simple Discord bot using discord.py!
 
 ## Setup
 
@@ -46,6 +46,7 @@ GUILD_ID = IAMAGUILDID
 
 # Optional
 GENIUS_TOKEN = IAMAGENIUSTOKEN
+TTS_MONSTER_TOKEN = IAMATTSMONSTERTOKEN
 ```
 
 ## Run the Program
@@ -54,5 +55,4 @@ To run the program, make sure the virtual environment is activated and type `pyt
 
 ### Optional configurations
 
-You can make `blacklisted_words.txt` in the `data` directory that contains blacklisted words for your server. Check out the example!
-You can make `example_trivia_questions.json` in the `data` directory that contains trivia questions for your server. Check out the example!
+Check out `config.toml` to configure the bot to your liking!
