@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 if not load_dotenv():
     print("Could not locate .env!")
     sys.exit(1)
-tts_monster_token = os.getenv("TTS_MONSTER")
+tts_monster_token = os.getenv("TTS_MONSTER_TOKEN")
 
 with open("config.toml", "rb") as f:
     config = tomllib.load(f)["tts"]
