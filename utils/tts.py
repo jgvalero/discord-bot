@@ -6,6 +6,7 @@ import sys
 import typing
 
 import requests
+import tomllib
 from dotenv import load_dotenv
 
 if not load_dotenv():
@@ -13,9 +14,9 @@ if not load_dotenv():
     sys.exit(1)
 tts_monster_token = os.getenv("TTS_MONSTER")
 
-if os.path.exists("data/voices.json"):
-    with open("data/voices.json", "r") as f:
-        voice_id = json.load(f)
+with open("config.toml", "rb") as f:
+    config = tomllib.load(f)["tts"]
+    voice_id = config["voice"]
 
 
 def to_thread(func: typing.Callable) -> typing.Coroutine:
