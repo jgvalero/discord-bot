@@ -1,9 +1,8 @@
-import json
-import os
 import random
 from typing import Literal
 
 import discord
+import tomllib
 from discord import app_commands
 from discord.ext import commands
 
@@ -12,15 +11,14 @@ from utils.money import Money
 
 
 class Fish(commands.GroupCog):
-    def __init__(self, bot: DiscordBot, catch_chance: float) -> None:
+    def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
-        self.catch_chance = catch_chance
         self.money = Money(bot.database)
-        if os.path.exists("data/fishes.json"):
-            with open("data/fishes.json", "r") as f:
-                self.fishes = json.load(f)
-        else:
-            self.fishes = [{"name": "Joel", "price": 10, "chance": 100}]
+
+        with open("config.toml", "rb") as f:
+            self.config = tomllib.load(f)["fishing"]
+            self.fishes = self.config["fish"]
+            self.catch_chance = self.config["catch_chance"]
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5.0, key=lambda i: (i.guild_id, i.user.id))
@@ -270,4 +268,4 @@ class Fish(commands.GroupCog):
 
 
 async def setup(bot: DiscordBot) -> None:
-    await bot.add_cog(Fish(bot, catch_chance=0.25))
+    await bot.add_cog(Fish(bot))

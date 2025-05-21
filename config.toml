@@ -1,0 +1,34 @@
+[fishing]
+# Must be <= 1
+catch_chance = 0.25
+
+# Must add up to 100
+[[fishing.fish]]
+name = "Joel"
+price = 10
+chance = 50
+
+[[fishing.fish]]
+name = "Ricardo"
+price = 50
+chance = 25
+
+[[fishing.fish]]
+name = "Hector"
+price = 100
+chance = 15
+
+[[fishing.fish]]
+name = "Anna"
+price = 500
+chance = 5
+
+[[fishing.fish]]
+name = "Felix"
+price = 750
+chance = 4
+
+[[fishing.fish]]
+name = "Eduardo"
+price = 1000
+chance = 1
