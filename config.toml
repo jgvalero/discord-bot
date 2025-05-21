@@ -32,3 +32,7 @@ chance = 4
 name = "Eduardo"
 price = 1000
 chance = 1
+
+[moderation]
+# Example: blacklisted_words = ["poop", "flip", "snap"]
+blacklisted_words = ["fuck"]

@@ -1,6 +1,5 @@
-import os
-
 import discord
+import tomllib
 from discord import app_commands
 from discord.ext import commands
 
@@ -8,11 +7,10 @@ from discord.ext import commands
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        if os.path.exists("data/blacklisted_words.txt"):
-            with open("data/blacklisted_words.txt", "r") as f:
-                self.blacklisted_words = [line.strip() for line in f]
-        else:
-            self.blacklisted_words = []
+
+        with open("config.toml", "rb") as f:
+            self.config = tomllib.load(f)["moderation"]
+            self.blacklisted_words = self.config["blacklisted_words"]
 
     @commands.Cog.listener()
     async def on_message(self, message):
