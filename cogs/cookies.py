@@ -3,11 +3,13 @@ from discord import app_commands
 from discord.ext import commands
 
 from main import DiscordBot
+from utils.money import Money
 
 
 class Cookies(commands.GroupCog):
     def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
+        self.money = Money(bot.database)
 
     @app_commands.command()
     async def amount(self, interaction: discord.Interaction, member: discord.User):
@@ -75,6 +77,7 @@ class Cookies(commands.GroupCog):
         amount: int,
     ):
         """Give your cookies to someone else!"""
+
         if interaction.guild is None:
             await interaction.response.send_message(
                 "This command can only be used in a server!", ephemeral=True
@@ -86,18 +89,19 @@ class Cookies(commands.GroupCog):
                 "You can't give someone a negative amount of cookies!"
             )
 
-        sender_id = str(interaction.user.id)
-        recipient_id = str(recipient.id)
-        guild_id = str(interaction.guild.id)
+        sender_id = interaction.user.id
+        recipient_id = recipient.id
+        guild_id = interaction.guild.id
 
-        if not await self.remove_cookies(sender_id, guild_id, amount):
+        if not self.money.lose(sender_id, guild_id, amount):
             return await interaction.response.send_message(
-                "You do not have enough cookies to give!"
+                "You don't have enough cookies to give!"
             )
 
-        await self.add_cookies(recipient_id, guild_id, amount)
+        self.money.earn(recipient_id, guild_id, amount)
+
         await interaction.response.send_message(
-            f"You gave {amount} cookies to {recipient.display_name}!"
+            f"Transfer complete. {interaction.user.mention} gives {recipient.mention} {amount} cookies!"
         )
 
     @app_commands.command()
