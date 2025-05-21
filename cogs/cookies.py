@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -127,47 +129,57 @@ class Cookies(commands.GroupCog):
             f"{member.display_name} now has {amount} cookies!"
         )
 
-    # @app_commands.command()
-    # async def mute(self, interaction: discord.Interaction, member: discord.Member):
-    #     """Mutes a user for 10 seconds! Costs 10 cookies!"""
-    #     # user_cookies = self.db.get_value(
-    #         interaction.user.id, interaction.guild.id, "cookies"
-    #     )
-    #     if user_cookies < 10:
-    #         await interaction.response.send_message(
-    #             f"You don't have enough cookies ({interaction.user.display_name})!"
-    #         )
-    #         return
-    #     # self.db.set_value(
-    #         interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
-    #     )
-    #     await member.edit(mute=True)
-    #     await interaction.response.send_message(
-    #         f"{member.display_name} has been muted for 10 seconds! Enjoy the silence!"
-    #     )
-    #     await asyncio.sleep(10)
-    #     await member.edit(mute=False)
+    @app_commands.command()
+    async def mute(self, interaction: discord.Interaction, member: discord.Member):
+        """Mutes a user for 10 seconds! Costs 10 cookies!"""
 
-    # @app_commands.command()
-    # async def deafen(self, interaction: discord.Interaction, member: discord.Member):
-    #     """Deafens a user for 10 seconds! Costs 10 cookies!"""
-    #     # user_cookies = self.db.get_value(
-    #         interaction.user.id, interaction.guild.id, "cookies"
-    #     )
-    #     if user_cookies < 10:
-    #         await interaction.response.send_message(
-    #             f"You don't have enough cookies ({interaction.user.display_name})!"
-    #         )
-    #         return
-    #     # self.db.set_value(
-    #         interaction.user.id, interaction.guild.id, "cookies", user_cookies - 10
-    #     )
-    #     await member.edit(deafen=True)
-    #     await interaction.response.send_message(
-    #         f"{member.display_name} has been deafened for 10 seconds! We're having so much fun without you!"
-    #     )
-    #     await asyncio.sleep(10)
-    #     await member.edit(deafen=False)
+        # Ensure command is used in a server context
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        author_id = interaction.user.id
+        guild_id = interaction.guild.id
+
+        if not self.money.lose(author_id, guild_id, 10):
+            return await interaction.response.send_message(
+                "You don't have enough cookies to mute!"
+            )
+
+        await member.edit(mute=True)
+        await interaction.response.send_message(
+            f"{member.display_name} has been muted for 10 seconds! Enjoy the silence!"
+        )
+        await asyncio.sleep(10)
+        await member.edit(mute=False)
+
+    @app_commands.command()
+    async def deafen(self, interaction: discord.Interaction, member: discord.Member):
+        """Deafens a user for 10 seconds! Costs 10 cookies!"""
+
+        # Ensure command is used in a server context
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        author_id = interaction.user.id
+        guild_id = interaction.guild.id
+
+        if not self.money.lose(author_id, guild_id, 10):
+            return await interaction.response.send_message(
+                "You don't have enough cookies to mute!"
+            )
+
+        await member.edit(deafen=True)
+        await interaction.response.send_message(
+            f"{member.display_name} has been deafened for 10 seconds! We're having so much fun without you!"
+        )
+        await asyncio.sleep(10)
+        await member.edit(deafen=False)
 
     # @commands.command()
     # async def rps(self, ctx, member: discord.Member, wager: int = 0):
@@ -245,12 +257,15 @@ class Cookies(commands.GroupCog):
             )
             return
 
-        user_id = str(member.id)
-        guild_id = str(interaction.guild.id)
+        user_id = member.id
+        guild_id = interaction.guild.id
 
-        stats = self.bot.database.get_value(user_id, guild_id, "cookies", "*")
+        current_cookies = self.money.get_money(user_id, guild_id)
+        total_earned = self.money.get_total_earned(user_id, guild_id)
+        total_lost = self.money.get_total_lost(user_id, guild_id)
+        highest_amount = self.money.get_max(user_id, guild_id)
 
-        if not stats:
+        if not current_cookies:
             await interaction.response.send_message(
                 f"{member.display_name} has no cookie stats yet!",
                 ephemeral=True,
@@ -263,10 +278,10 @@ class Cookies(commands.GroupCog):
         )
         embed.set_thumbnail(url=member.display_avatar.url)
 
-        embed.add_field(name="Current Cookies", value=stats[2], inline=True)
-        embed.add_field(name="Total Earned", value=stats[3], inline=True)
-        embed.add_field(name="Total Lost", value=stats[4], inline=True)
-        embed.add_field(name="Highest Amount", value=stats[5], inline=True)
+        embed.add_field(name="Current Cookies", value=current_cookies, inline=True)
+        embed.add_field(name="Total Earned", value=total_earned, inline=True)
+        embed.add_field(name="Total Lost", value=total_lost, inline=True)
+        embed.add_field(name="Highest Amount", value=highest_amount, inline=True)
 
         await interaction.response.send_message(embed=embed)
 
