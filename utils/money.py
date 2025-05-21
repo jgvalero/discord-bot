@@ -76,6 +76,9 @@ class Money:
 
         return True
 
+    def set_money(self, user_id, guild_id, amount):
+        return self.db.set_value(user_id, guild_id, "cookies", "cookies", amount)
+
     def get_money(self, user_id, guild_id) -> int:
         return self.db.get_value(user_id, guild_id, "cookies", "cookies")[0]
 

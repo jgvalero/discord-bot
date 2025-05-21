@@ -17,7 +17,7 @@ class Cookies(commands.GroupCog):
         if interaction.guild is None:
             return
 
-        cookies = await self.get_cookies(str(member.id), str(interaction.guild.id))
+        cookies = self.money.get_money(member.id, interaction.guild.id)
         await interaction.response.send_message(
             f"{member.display_name} has {cookies} cookies!"
         )
@@ -101,7 +101,7 @@ class Cookies(commands.GroupCog):
         self.money.earn(recipient_id, guild_id, amount)
 
         await interaction.response.send_message(
-            f"Transfer complete. {interaction.user.mention} gives {recipient.mention} {amount} cookies!"
+            f"Transfer complete. {interaction.user.display_name} gives {recipient.display_name} {amount} cookies!"
         )
 
     @app_commands.command()
@@ -119,10 +119,10 @@ class Cookies(commands.GroupCog):
             )
             return
 
-        user_id = str(member.id)
-        guild_id = str(interaction.guild.id)
+        user_id = member.id
+        guild_id = interaction.guild.id
 
-        self.bot.database.set_value(user_id, guild_id, "cookies", "cookies", amount)
+        self.money.set_money(user_id, guild_id, amount)
         await interaction.response.send_message(
             f"{member.display_name} now has {amount} cookies!"
         )
@@ -269,38 +269,6 @@ class Cookies(commands.GroupCog):
         embed.add_field(name="Highest Amount", value=stats[5], inline=True)
 
         await interaction.response.send_message(embed=embed)
-
-    # Helper Functions
-    async def get_cookies(self, user_id: str, guild_id: str) -> int:
-        """Get current cookie count for a user"""
-        result = self.bot.database.get_value(user_id, guild_id, "cookies", "cookies")
-        return result[0] if result else 0
-
-    async def add_cookies(self, user_id: str, guild_id: str, amount: int) -> None:
-        """Add cookies to a user's balance and update stats"""
-        [cookies, total, max_cookies] = self.bot.database.get_value(
-            user_id, guild_id, "cookies", "cookies, total, max"
-        )
-
-        new_total = cookies + amount
-        new_lifetime = total + amount
-
-        self.bot.database.set_value(user_id, guild_id, "cookies", "cookies", new_total)
-        self.bot.database.set_value(user_id, guild_id, "cookies", "total", new_lifetime)
-
-        if new_total > max_cookies:
-            self.bot.database.set_value(user_id, guild_id, "cookies", "max", new_total)
-
-    async def remove_cookies(self, user_id: str, guild_id: str, amount: int) -> bool:
-        """Remove cookies from a user's balance"""
-        current = await self.get_cookies(user_id, guild_id)
-        if current < amount:
-            return False
-
-        self.bot.database.set_value(
-            user_id, guild_id, "cookies", "cookies", current - amount
-        )
-        return True
 
 
 async def setup(bot: DiscordBot) -> None:
