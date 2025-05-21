@@ -1,3 +1,4 @@
+# ----- FISHING ----- #
 [fishing]
 # Must be <= 1
 catch_chance = 0.25
@@ -33,6 +34,7 @@ name = "Eduardo"
 price = 1000
 chance = 1
 
+# ----- MODERATION ----- #
 [moderation]
 # Example: blacklisted_words = ["poop", "flip", "snap"]
 blacklisted_words = ["fuck"]
