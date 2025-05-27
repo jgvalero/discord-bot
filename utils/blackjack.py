@@ -95,7 +95,7 @@ class Blackjack:
         elif player_blackjack:
             return "Blackjack", self.player_bet * 2.5
         elif dealer_blackjack:
-            return "Lose", 0
+            return "Tough luck! Dealer has natural blackjack!", 0
 
         if dealer_total > 21 or player_total > dealer_total:
             return "Win", self.player_bet * 2

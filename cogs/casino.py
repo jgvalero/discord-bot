@@ -248,13 +248,13 @@ class Casino(commands.GroupCog):
                 self.money.earn(user_id, guild_id, payout)
                 embed.add_field(
                     name="Result",
-                    value="Push! Both you and dealer have Blackjack.",
+                    value="Push! Both you and dealer have natural blackjack.",
                     inline=False,
                 )
             else:
                 embed.add_field(
                     name="Result",
-                    value="Dealer has Blackjack. Tough luck!",
+                    value="Dealer has natural blackjack. Tough luck!",
                     inline=False,
                 )
                 embed.color = discord.Color.red()
