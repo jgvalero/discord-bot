@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import discord
@@ -14,6 +15,7 @@ class Casino(commands.GroupCog):
         self.money = Money(bot.database)
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
     async def slots(self, interaction: discord.Interaction, wager: int = 1):
         """Play some slots!"""
 
@@ -38,6 +40,13 @@ class Casino(commands.GroupCog):
         wheel2 = random.choice(SYMBOLS)
         wheel3 = random.choice(SYMBOLS)
 
+        await interaction.response.send_message("❓ | ❓ | ❓")
+        await asyncio.sleep(0.5)
+        await interaction.edit_original_response(content=f"{wheel1} | ❓ | ❓")
+        await asyncio.sleep(0.5)
+        await interaction.edit_original_response(content=f"{wheel1} | {wheel2} | ❓")
+        await asyncio.sleep(0.5)
+
         def evaluate_slots(wheel1, wheel2, wheel3):
             if wheel1 == wheel2 == wheel3:
                 if interaction.guild:
@@ -47,8 +56,8 @@ class Casino(commands.GroupCog):
             else:
                 return "Tough luck!"
 
-        await interaction.response.send_message(
-            f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
+        await interaction.edit_original_response(
+            content=f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
         )
 
     class BlackjackView(ui.View):
@@ -267,6 +276,15 @@ class Casino(commands.GroupCog):
 
         await interaction.response.send_message(embed=embed, view=view)
         view.message = await interaction.original_response()
+
+    @slots.error
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message(str(error), ephemeral=True)
 
 
 async def setup(bot):
