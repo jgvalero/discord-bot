@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import discord
@@ -14,6 +15,7 @@ class Casino(commands.GroupCog):
         self.money = Money(bot.database)
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 3, key=lambda i: (i.guild_id, i.user.id))
     async def slots(self, interaction: discord.Interaction, wager: int = 1):
         """Play some slots!"""
 
@@ -38,18 +40,35 @@ class Casino(commands.GroupCog):
         wheel2 = random.choice(SYMBOLS)
         wheel3 = random.choice(SYMBOLS)
 
+        embed = discord.Embed(
+            title=f"{interaction.user.display_name}'s slots!",
+            description="❓ | ❓ | ❓",
+            color=discord.Color.yellow(),
+        )
+        await interaction.response.send_message(embed=embed)
+        await asyncio.sleep(0.5)
+
+        embed.description = f"{wheel1} | ❓ | ❓"
+        await interaction.edit_original_response(embed=embed)
+        await asyncio.sleep(0.5)
+
+        embed.description = f"{wheel1} | {wheel2} | ❓"
+        await interaction.edit_original_response(embed=embed)
+        await asyncio.sleep(0.5)
+
         def evaluate_slots(wheel1, wheel2, wheel3):
             if wheel1 == wheel2 == wheel3:
                 if interaction.guild:
                     payout = wager * 100
                     self.money.earn(user_id, guild_id, payout)
+                    embed.color = discord.Color.green()
                     return f"You won! Payout: {payout}"
             else:
+                embed.color = discord.Color.red()
                 return "Tough luck!"
 
-        await interaction.response.send_message(
-            f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
-        )
+        embed.description = f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
+        await interaction.edit_original_response(embed=embed)
 
     class BlackjackView(ui.View):
         def __init__(
@@ -267,6 +286,15 @@ class Casino(commands.GroupCog):
 
         await interaction.response.send_message(embed=embed, view=view)
         view.message = await interaction.original_response()
+
+    @slots.error
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message(str(error), ephemeral=True)
 
 
 async def setup(bot):
