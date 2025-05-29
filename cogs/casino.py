@@ -40,11 +40,20 @@ class Casino(commands.GroupCog):
         wheel2 = random.choice(SYMBOLS)
         wheel3 = random.choice(SYMBOLS)
 
-        await interaction.response.send_message("❓ | ❓ | ❓")
+        embed = discord.Embed(
+            title=f"{interaction.user.display_name}'s slots!",
+            description="❓ | ❓ | ❓",
+            color=discord.Color.yellow(),
+        )
+        await interaction.response.send_message(embed=embed)
         await asyncio.sleep(0.5)
-        await interaction.edit_original_response(content=f"{wheel1} | ❓ | ❓")
+
+        embed.description = f"{wheel1} | ❓ | ❓"
+        await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(0.5)
-        await interaction.edit_original_response(content=f"{wheel1} | {wheel2} | ❓")
+
+        embed.description = f"{wheel1} | {wheel2} | ❓"
+        await interaction.edit_original_response(embed=embed)
         await asyncio.sleep(0.5)
 
         def evaluate_slots(wheel1, wheel2, wheel3):
@@ -52,13 +61,14 @@ class Casino(commands.GroupCog):
                 if interaction.guild:
                     payout = wager * 100
                     self.money.earn(user_id, guild_id, payout)
+                    embed.color = discord.Color.green()
                     return f"You won! Payout: {payout}"
             else:
+                embed.color = discord.Color.red()
                 return "Tough luck!"
 
-        await interaction.edit_original_response(
-            content=f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
-        )
+        embed.description = f"{wheel1} | {wheel2} | {wheel3}... {evaluate_slots(wheel1, wheel2, wheel3)}"
+        await interaction.edit_original_response(embed=embed)
 
     class BlackjackView(ui.View):
         def __init__(
