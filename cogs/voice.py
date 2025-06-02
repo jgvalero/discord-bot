@@ -1,11 +1,13 @@
 import asyncio
 from collections import deque
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, Union, cast
 
 import discord
 import yt_dlp
 from discord import app_commands
 from discord.ext import commands
+
+from utils.voting import Voting
 
 # Suppress noise about console usage from errors
 yt_dlp.utils.bug_reports_message = lambda **kwargs: ""
@@ -32,14 +34,35 @@ ffmpeg_options: Dict[str, str] = {
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
 
+class LocalFileSource(discord.PCMVolumeTransformer):
+    def __init__(
+        self,
+        source: discord.AudioSource,
+        *,
+        filename: str,
+        volume: float = 0.2,
+        requester: Optional[discord.Member] = None,
+    ):
+        super().__init__(source, volume)
+        self.title: Optional[str] = filename
+        self.url: Optional[str] = None
+        self.requester = requester
+
+
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(
-        self, source: discord.AudioSource, *, data: Dict[str, Any], volume: float = 0.2
+        self,
+        source: discord.AudioSource,
+        *,
+        data: Dict[str, Any],
+        volume: float = 0.2,
+        requester: Optional[discord.Member] = None,
     ):
         super().__init__(source, volume)
         self.data = data
         self.title: Optional[str] = data.get("title")
         self.url: Optional[str] = data.get("url")
+        self.requester = requester
 
     @classmethod
     async def from_url(
@@ -48,6 +71,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         *,
         loop: Optional[asyncio.AbstractEventLoop] = None,
         stream: bool = False,
+        requester: Optional[discord.Member] = None,
     ) -> "YTDLSource":
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(
@@ -65,6 +89,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(
             discord.FFmpegPCMAudio(filename, before_options=ffmpeg_options["options"]),
             data=data,
+            requester=requester,
         )
 
 
@@ -72,6 +97,8 @@ class Voice(commands.GroupCog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.voice_queue: deque[YTDLSource] = deque()
+        self.current_song: Optional[Union[YTDLSource, LocalFileSource]] = None
+        self.skip_votes: Dict[int, Voting] = {}
 
     @app_commands.command()
     async def join(
@@ -109,9 +136,12 @@ class Voice(commands.GroupCog):
             return
 
         voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
-        source = discord.PCMVolumeTransformer(
-            discord.FFmpegPCMAudio(query, before_options=ffmpeg_options["options"])
+        source = LocalFileSource(
+            discord.FFmpegPCMAudio(query, before_options=ffmpeg_options["options"]),
+            filename=query,
+            requester=cast(discord.Member, interaction.user),
         )
+        self.current_song = source
         voice_client.play(
             source,
             after=lambda e: (
@@ -140,7 +170,11 @@ class Voice(commands.GroupCog):
         await interaction.response.defer()
 
         try:
-            player = await YTDLSource.from_url(query, loop=self.bot.loop)
+            player = await YTDLSource.from_url(
+                query,
+                loop=self.bot.loop,
+                requester=cast(discord.Member, interaction.user),
+            )
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
 
             if voice_client.is_playing() or voice_client.is_paused():
@@ -149,6 +183,7 @@ class Voice(commands.GroupCog):
                     f"Added to queue: {player.title}! (Position: {len(self.voice_queue)})"
                 )
             else:
+                self.current_song = player
                 voice_client.play(
                     player,
                     after=lambda e: (
@@ -177,8 +212,14 @@ class Voice(commands.GroupCog):
         await interaction.response.defer()
 
         try:
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            player = await YTDLSource.from_url(
+                url,
+                loop=self.bot.loop,
+                stream=True,
+                requester=cast(discord.Member, interaction.user),
+            )
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
+            self.current_song = player
             voice_client.play(
                 player,
                 after=lambda e: (
@@ -288,8 +329,13 @@ class Voice(commands.GroupCog):
 
         voice_client = cast(discord.VoiceClient, guild.voice_client)
 
+        self.current_song = None
+        if guild.id in self.skip_votes:
+            del self.skip_votes[guild.id]
+
         if self.voice_queue:
             next_player = self.voice_queue.popleft()
+            self.current_song = next_player
             voice_client.play(next_player, after=lambda e: self.play_next(guild))
 
     @app_commands.command()
@@ -307,11 +353,50 @@ class Voice(commands.GroupCog):
             return
 
         voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
-        if voice_client.is_playing() or voice_client.is_paused():
-            voice_client.stop()
-            await interaction.response.send_message("Skipped current song!")
-        else:
+        if not (voice_client.is_playing() or voice_client.is_paused()):
             await interaction.response.send_message("Nothing is currently playing!")
+            return
+
+        member = cast(discord.Member, interaction.user)
+
+        if self.current_song and self.current_song.requester == member:
+            voice_client.stop()
+            await interaction.response.send_message("Song skipped by requester!")
+            return
+
+        if member.voice and member.voice.channel:
+            voice_channel = member.voice.channel
+            listening_members = [
+                m
+                for m in voice_channel.members
+                if not m.bot and not (m.voice and m.voice.self_deaf)
+            ]
+            required_votes = max(1, len(listening_members) // 2)
+        else:
+            await interaction.response.send_message(
+                "You must be in a voice channel to vote to skip!"
+            )
+            return
+
+        if interaction.guild.id not in self.skip_votes:
+            self.skip_votes[interaction.guild.id] = Voting(required_votes)
+
+        voting = self.skip_votes[interaction.guild.id]
+
+        if voting.addVote(member):
+            if voting.isDone():
+                voice_client.stop()
+                await interaction.response.send_message(
+                    f"Skip vote passed! ({voting.currentVotes}/{voting.requiredVotes})"
+                )
+            else:
+                await interaction.response.send_message(
+                    f"Skip vote added! ({voting.currentVotes}/{voting.requiredVotes} needed)"
+                )
+        else:
+            await interaction.response.send_message(
+                "You have already voted to skip this song!"
+            )
 
     @app_commands.command(name="queue")
     async def show_queue(self, interaction: discord.Interaction) -> None:
