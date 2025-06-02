@@ -1,4 +1,5 @@
 import asyncio
+from collections import deque
 from typing import Any, Dict, Optional, cast
 
 import discord
@@ -70,6 +71,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Voice(commands.GroupCog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.voice_queue: deque[YTDLSource] = deque()
 
     @app_commands.command()
     async def join(
@@ -111,7 +113,10 @@ class Voice(commands.GroupCog):
             discord.FFmpegPCMAudio(query, before_options=ffmpeg_options["options"])
         )
         voice_client.play(
-            source, after=lambda e: print(f"Player error: {e}!") if e else None
+            source,
+            after=lambda e: (
+                self.play_next(interaction.guild) if interaction.guild else None
+            ),
         )
 
         if not interaction.response.is_done():
@@ -137,10 +142,20 @@ class Voice(commands.GroupCog):
         try:
             player = await YTDLSource.from_url(query, loop=self.bot.loop)
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
-            voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}!") if e else None
-            )
-            await interaction.followup.send(f"Now playing: {player.title}!")
+
+            if voice_client.is_playing() or voice_client.is_paused():
+                self.voice_queue.append(player)
+                await interaction.followup.send(
+                    f"Added to queue: {player.title}! (Position: {len(self.voice_queue)})"
+                )
+            else:
+                voice_client.play(
+                    player,
+                    after=lambda e: (
+                        self.play_next(interaction.guild) if interaction.guild else None
+                    ),
+                )
+                await interaction.followup.send(f"Now playing: {player.title}!")
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {str(e)}!")
 
@@ -165,7 +180,10 @@ class Voice(commands.GroupCog):
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
             voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}!") if e else None
+                player,
+                after=lambda e: (
+                    self.play_next(interaction.guild) if interaction.guild else None
+                ),
             )
             await interaction.followup.send(f"Now playing: {player.title}!")
         except Exception as e:
@@ -263,6 +281,85 @@ class Voice(commands.GroupCog):
         else:
             await interaction.response.send_message("Audio is not paused!")
 
+    def play_next(self, guild: discord.Guild) -> None:
+        """Plays the next song in the queue."""
+        if not guild.voice_client:
+            return
+
+        voice_client = cast(discord.VoiceClient, guild.voice_client)
+
+        if self.voice_queue:
+            next_player = self.voice_queue.popleft()
+            voice_client.play(next_player, after=lambda e: self.play_next(guild))
+
+    @app_commands.command()
+    async def skip(self, interaction: discord.Interaction) -> None:
+        """Skips the current song!"""
+
+        if not interaction.guild:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        if interaction.guild.voice_client is None:
+            await interaction.response.send_message("Not connected to a voice channel!")
+            return
+
+        voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
+        if voice_client.is_playing() or voice_client.is_paused():
+            voice_client.stop()
+            await interaction.response.send_message("Skipped current song!")
+        else:
+            await interaction.response.send_message("Nothing is currently playing!")
+
+    @app_commands.command(name="queue")
+    async def show_queue(self, interaction: discord.Interaction) -> None:
+        """Shows the current queue!"""
+
+        if not interaction.guild:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        if not self.voice_queue:
+            await interaction.response.send_message("The queue is empty!")
+            return
+
+        queue_list = []
+        for i, player in enumerate(self.voice_queue, 1):
+            queue_list.append(f"{i}. {player.title}")
+
+        queue_text = "\n".join(queue_list[:10])
+        if len(self.voice_queue) > 10:
+            queue_text += f"\n... and {len(self.voice_queue) - 10} more"
+
+        embed = discord.Embed(
+            title="Music Queue", description=queue_text, color=0x89CD00
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
+    async def clear(self, interaction: discord.Interaction) -> None:
+        """Clears the music queue!"""
+
+        if not interaction.guild:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        if not self.voice_queue:
+            await interaction.response.send_message("The queue is already empty!")
+            return
+
+        queue_size = len(self.voice_queue)
+        self.voice_queue.clear()
+        await interaction.response.send_message(
+            f"Cleared {queue_size} songs from the queue!"
+        )
+
     async def ensure_voice(self, interaction: discord.Interaction) -> None:
         if not interaction.guild:
             if not interaction.response.is_done():
@@ -289,10 +386,6 @@ class Voice(commands.GroupCog):
                         "You are not connected to a voice channel!"
                     )
                 raise commands.CommandError("Author not connected to a voice channel!")
-        else:
-            voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
-            if voice_client.is_playing():
-                voice_client.stop()
 
 
 async def setup(bot: commands.Bot) -> None:
