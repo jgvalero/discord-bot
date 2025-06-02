@@ -67,15 +67,15 @@ class YTDLSource(discord.PCMVolumeTransformer):
         )
 
 
-class Music(commands.Cog):
+class Voice(commands.GroupCog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="join", description="Joins a voice channel")
+    @app_commands.command()
     async def join(
         self, interaction: discord.Interaction, channel: discord.VoiceChannel
     ) -> None:
-        """Joins a voice channel"""
+        """Joins a voice channel!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -91,11 +91,9 @@ class Music(commands.Cog):
             await channel.connect()
             await interaction.response.send_message(f"Joined {channel.name}!")
 
-    @app_commands.command(
-        name="play", description="Plays a file from the local filesystem"
-    )
-    async def play(self, interaction: discord.Interaction, query: str) -> None:
-        """Plays a file from the local filesystem"""
+    # @app_commands.command()
+    async def play_file(self, interaction: discord.Interaction, query: str) -> None:
+        """Plays a file from the local filesystem!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -113,17 +111,15 @@ class Music(commands.Cog):
             discord.FFmpegPCMAudio(query, before_options=ffmpeg_options["options"])
         )
         voice_client.play(
-            source, after=lambda e: print(f"Player error: {e}") if e else None
+            source, after=lambda e: print(f"Player error: {e}!") if e else None
         )
 
         if not interaction.response.is_done():
             await interaction.response.send_message(f"Now playing: {query}!")
 
-    @app_commands.command(
-        name="youtube", description="Plays from a URL (YouTube and other sites)"
-    )
-    async def yt(self, interaction: discord.Interaction, url: str) -> None:
-        """Plays from a url (almost anything yt_dlp supports)"""
+    @app_commands.command()
+    async def play(self, interaction: discord.Interaction, query: str) -> None:
+        """Plays from a url or search query!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -139,20 +135,18 @@ class Music(commands.Cog):
         await interaction.response.defer()
 
         try:
-            player = await YTDLSource.from_url(url, loop=self.bot.loop)
+            player = await YTDLSource.from_url(query, loop=self.bot.loop)
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
             voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}") if e else None
+                player, after=lambda e: print(f"Player error: {e}!") if e else None
             )
             await interaction.followup.send(f"Now playing: {player.title}!")
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {str(e)}!")
 
-    @app_commands.command(
-        name="stream", description="Streams from a URL without downloading"
-    )
+    # @app_commands.command()
     async def stream(self, interaction: discord.Interaction, url: str) -> None:
-        """Streams from a url (same as yt, but doesn't predownload)"""
+        """Streams from a url or search query!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -171,16 +165,16 @@ class Music(commands.Cog):
             player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
             voice_client.play(
-                player, after=lambda e: print(f"Player error: {e}") if e else None
+                player, after=lambda e: print(f"Player error: {e}!") if e else None
             )
             await interaction.followup.send(f"Now playing: {player.title}!")
         except Exception as e:
             await interaction.followup.send(f"An error occurred: {str(e)}!")
 
-    @app_commands.command(name="volume", description="Changes the player's volume")
+    @app_commands.command()
     @app_commands.describe(volume="Volume percentage (0-100)")
     async def volume(self, interaction: discord.Interaction, volume: int) -> None:
-        """Changes the player's volume"""
+        """Changes the player's volume!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -209,11 +203,9 @@ class Music(commands.Cog):
                 "No audio source is currently playing or volume control not available!"
             )
 
-    @app_commands.command(
-        name="stop", description="Stops playing and disconnects from voice"
-    )
+    @app_commands.command()
     async def stop(self, interaction: discord.Interaction) -> None:
-        """Stops and disconnects the bot from voice"""
+        """Stops playing and disconnects from voice!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -229,9 +221,9 @@ class Music(commands.Cog):
         await voice_client.disconnect()
         await interaction.response.send_message("Disconnected from voice channel!")
 
-    @app_commands.command(name="pause", description="Pauses the current audio")
+    @app_commands.command()
     async def pause(self, interaction: discord.Interaction) -> None:
-        """Pauses the current audio"""
+        """Pauses the current audio!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -250,9 +242,9 @@ class Music(commands.Cog):
         else:
             await interaction.response.send_message("Nothing is currently playing!")
 
-    @app_commands.command(name="resume", description="Resumes the paused audio")
+    @app_commands.command()
     async def resume(self, interaction: discord.Interaction) -> None:
-        """Resumes the paused audio"""
+        """Resumes the paused audio!"""
 
         if not interaction.guild:
             await interaction.response.send_message(
@@ -281,7 +273,7 @@ class Music(commands.Cog):
                 await interaction.followup.send(
                     "This command can only be used in a server!"
                 )
-            raise commands.CommandError("Command not used in a guild.")
+            raise commands.CommandError("Command not used in a guild!")
 
         if interaction.guild.voice_client is None:
             member = cast(discord.Member, interaction.user)
@@ -296,7 +288,7 @@ class Music(commands.Cog):
                     await interaction.followup.send(
                         "You are not connected to a voice channel!"
                     )
-                raise commands.CommandError("Author not connected to a voice channel.")
+                raise commands.CommandError("Author not connected to a voice channel!")
         else:
             voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
             if voice_client.is_playing():
@@ -304,4 +296,4 @@ class Music(commands.Cog):
 
 
 async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog(Music(bot))
+    await bot.add_cog(Voice(bot))
