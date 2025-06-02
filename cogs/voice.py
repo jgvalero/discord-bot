@@ -7,6 +7,7 @@ import yt_dlp
 from discord import app_commands
 from discord.ext import commands
 
+import utils.tts
 from utils.voting import Voting
 
 # Suppress noise about console usage from errors
@@ -444,6 +445,71 @@ class Voice(commands.GroupCog):
         await interaction.response.send_message(
             f"Cleared {queue_size} songs from the queue!"
         )
+
+    @app_commands.command()
+    async def tts(self, interaction: discord.Interaction, message: str = "") -> None:
+        """Play a TTS message!"""
+
+        if not interaction.guild:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        if message == "":
+            await interaction.response.send_message(
+                f"Current voices: {utils.tts.get_voices()}"
+            )
+            return
+
+        await self.ensure_voice(interaction)
+
+        if interaction.guild.voice_client is None:
+            return
+
+        voice_client = cast(discord.VoiceClient, interaction.guild.voice_client)
+
+        await interaction.response.defer()
+
+        try:
+            urls = await utils.tts.generate_tts(message)
+
+            if urls is None:
+                await interaction.followup.send(
+                    "Woah there! You have exceeded past 100 characters!"
+                )
+                return
+
+            for url in urls:
+                player = await YTDLSource.from_url(
+                    url,
+                    loop=self.bot.loop,
+                    requester=cast(discord.Member, interaction.user),
+                )
+                player.volume = 1.0
+                player.title = "TTS Message"
+
+                if voice_client.is_playing() or voice_client.is_paused():
+                    self.voice_queue.append(player)
+                    await interaction.followup.send(
+                        f"Added to queue: TTS Message! (Position: {len(self.voice_queue)})"
+                    )
+                else:
+                    self.current_song = player
+                    voice_client.play(
+                        player,
+                        after=lambda e: (
+                            self.play_next(interaction.guild)
+                            if interaction.guild
+                            else None
+                        ),
+                    )
+                    await interaction.followup.send("Now playing TTS Message!")
+
+        except Exception as e:
+            await interaction.followup.send(
+                f"An error occurred generating TTS: {str(e)}"
+            )
 
     async def ensure_voice(self, interaction: discord.Interaction) -> None:
         if not interaction.guild:

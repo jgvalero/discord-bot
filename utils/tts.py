@@ -3,7 +3,7 @@ import functools
 import json
 import os
 import sys
-import typing
+from typing import Any, Callable, Coroutine, Dict, List, Optional
 
 import requests
 import tomllib
@@ -19,7 +19,7 @@ with open("config.toml", "rb") as f:
     voice_id = config["voice"]
 
 
-def to_thread(func: typing.Callable) -> typing.Coroutine:
+def to_thread(func: Callable) -> Callable[..., Coroutine[Any, Any, Any]]:
     @functools.wraps(func)
     async def wrapper(*args, **kwargs):
         return await asyncio.to_thread(func, *args, **kwargs)
@@ -27,7 +27,7 @@ def to_thread(func: typing.Callable) -> typing.Coroutine:
     return wrapper
 
 
-def get_url(message: str) -> str:
+def get_url(message: Dict[str, str]) -> str:
     headers = {"Authorization": tts_monster_token}
     payload = {"voice_id": message["voice_id"], "message": message["message"]}
     r = requests.post(
@@ -37,7 +37,7 @@ def get_url(message: str) -> str:
     return text["url"]
 
 
-def parse_input(input: str):
+def parse_input(input: str) -> List[Dict[str, str]]:
     messages = []
     parts = input.split(" ")
 
@@ -77,7 +77,7 @@ def parse_input(input: str):
 
 
 @to_thread
-def generate_tts(input: str):
+def generate_tts(input: str) -> Optional[List[str]]:
     messages = parse_input(input)
 
     if get_count(messages) > 100:
@@ -91,9 +91,9 @@ def generate_tts(input: str):
     return urls
 
 
-def get_voices():
+def get_voices() -> str:
     return ", ".join(voice_id.keys())
 
 
-def get_count(messages):
+def get_count(messages: List[Dict[str, str]]) -> int:
     return sum(len(item["message"]) for item in messages)
