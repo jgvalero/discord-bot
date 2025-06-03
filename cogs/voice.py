@@ -409,21 +409,30 @@ class Voice(commands.GroupCog):
             )
             return
 
-        if not self.voice_queue:
+        if not self.current_song:
             await interaction.response.send_message("The queue is empty!")
             return
 
         queue_list = []
         for i, player in enumerate(self.voice_queue, 1):
-            queue_list.append(f"{i}. {player.title}")
+            queue_list.append(
+                f"{i}. {player.title} (Requested by {player.requester.display_name if player.requester else 'Unknown'})"
+            )
 
         queue_text = "\n".join(queue_list[:10])
         if len(self.voice_queue) > 10:
             queue_text += f"\n... and {len(self.voice_queue) - 10} more"
 
-        embed = discord.Embed(
-            title="Music Queue", description=queue_text, color=0x89CD00
+        embed = discord.Embed(title="Player", color=0x89CD00)
+        embed.add_field(
+            name="Currently playing",
+            value=f"{self.current_song.title} (Requested by {self.current_song.requester.display_name if self.current_song.requester else 'Unknown'})",
+            inline=False,
         )
+
+        if queue_list:
+            embed.add_field(name="Queue", value=queue_text, inline=False)
+
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
