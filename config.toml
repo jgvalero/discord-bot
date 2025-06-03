@@ -63,3 +63,8 @@ gordon = "01f69a26-0759-44e4-b317-cdbcb26b26c0"
 kronk = "172f01d8-32d7-4dba-850b-41f9bd9b2bbc"
 shapiro = "a0741f38-b14a-4204-a26e-80f795f03637"
 zoomer = "a5879188-842e-4971-a281-eae9791e2138"
+
+# ----- VOICE ----- $
+[voice]
+play_cost = 0
+tts_cost = 10
