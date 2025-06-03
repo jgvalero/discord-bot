@@ -3,11 +3,14 @@ from collections import deque
 from typing import Any, Dict, Optional, Union, cast
 
 import discord
+import tomllib
 import yt_dlp
 from discord import app_commands
 from discord.ext import commands
 
 import utils.tts
+from main import DiscordBot
+from utils.money import Money
 from utils.voting import Voting
 
 # Suppress noise about console usage from errors
@@ -95,11 +98,27 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Voice(commands.GroupCog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: DiscordBot):
         self.bot = bot
         self.voice_queue: deque[YTDLSource] = deque()
         self.current_song: Optional[Union[YTDLSource, LocalFileSource]] = None
         self.skip_votes: Dict[int, Voting] = {}
+        self.money = Money(bot.database)
+
+        with open("config.toml", "rb") as f:
+            self.config = tomllib.load(f)["voice"]
+            self.play_cost = self.config["play_cost"]
+            self.tts_cost = self.config["tts_cost"]
+
+        play_desc = "Plays from a url or search query!"
+        if self.play_cost > 0:
+            play_desc += f" (Costs {self.play_cost} cookies)"
+        self.play.description = play_desc
+
+        tts_desc = "Play a TTS message!"
+        if self.tts_cost > 0:
+            tts_desc += f" (Costs {self.tts_cost} cookies)"
+        self.tts.description = tts_desc
 
     @app_commands.command()
     async def join(
@@ -162,6 +181,18 @@ class Voice(commands.GroupCog):
                 "This command can only be used in a server!", ephemeral=True
             )
             return
+
+        if self.play_cost > 0:
+            user_balance = self.money.get_money(
+                interaction.user.id, interaction.guild.id
+            )
+            if not self.money.lose(
+                interaction.user.id, interaction.guild.id, self.play_cost
+            ):
+                await interaction.response.send_message(
+                    f"You need {self.play_cost} cookies to use this command! You only have {user_balance}!",
+                )
+                return
 
         await self.ensure_voice(interaction)
 
@@ -471,6 +502,18 @@ class Voice(commands.GroupCog):
             )
             return
 
+        if self.tts_cost > 0:
+            user_balance = self.money.get_money(
+                interaction.user.id, interaction.guild.id
+            )
+            if not self.money.lose(
+                interaction.user.id, interaction.guild.id, self.tts_cost
+            ):
+                await interaction.response.send_message(
+                    f"You need {self.tts_cost} cookies to use this command! You only have {user_balance}!",
+                )
+                return
+
         await self.ensure_voice(interaction)
 
         if interaction.guild.voice_client is None:
@@ -548,5 +591,5 @@ class Voice(commands.GroupCog):
                 raise commands.CommandError("Author not connected to a voice channel!")
 
 
-async def setup(bot: commands.Bot) -> None:
+async def setup(bot: DiscordBot) -> None:
     await bot.add_cog(Voice(bot))
