@@ -7,6 +7,7 @@ from utils.database import Database
 
 class Fish(BaseModel):
     name: str
+    weight: int
     price: int
     chance: float
 
@@ -25,6 +26,8 @@ class Bait(BaseModel):
 
 class FishingSettings(BaseModel):
     base_catch_chance: float
+    level_modifier: float
+    experience: int
     fish: List[Fish]
     rod: List[Rod]
     bait: List[Bait]

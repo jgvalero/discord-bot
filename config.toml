@@ -2,35 +2,43 @@
 [fishing]
 # Must be <= 1
 base_catch_chance = 0.25
+level_modifier = 0.10
+experience = 10           # How much experience (fish caught) needed to level up
 
 # Must add up to 100
 [[fishing.fish]]
 name = "Joel"
+weight = 1
 price = 10
 chance = 50
 
 [[fishing.fish]]
 name = "Ricardo"
+weight = 5
 price = 50
 chance = 25
 
 [[fishing.fish]]
 name = "Hector"
+weight = 5
 price = 100
 chance = 15
 
 [[fishing.fish]]
 name = "Anna"
+weight = 3
 price = 500
 chance = 5
 
 [[fishing.fish]]
 name = "Felix"
+weight = 10
 price = 750
 chance = 4
 
 [[fishing.fish]]
 name = "Eduardo"
+weight = 10
 price = 1000
 chance = 1
 
