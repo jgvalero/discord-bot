@@ -1,7 +1,7 @@
 # ----- FISHING ----- #
 [fishing]
 # Must be <= 1
-catch_chance = 0.25
+base_catch_chance = 0.25
 
 # Must add up to 100
 [[fishing.fish]]
@@ -33,6 +33,22 @@ chance = 4
 name = "Eduardo"
 price = 1000
 chance = 1
+
+# Modifiers are multiplicative (example: final_catch_chance = base_catch_chance * (1 + modifier))
+[[fishing.rod]]
+name = "Crusty, Rusty, & Dusty"
+price = 0
+modifier = 0
+
+[[fishing.rod]]
+name = "Caster Lite"
+price = 0
+modifier = 0.10
+
+[[fishing.bait]]
+name = "Worm"
+price = 1
+modifier = 0.10
 
 # ----- MODERATION ----- #
 [moderation]

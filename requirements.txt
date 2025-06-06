@@ -24,6 +24,7 @@ yarl
 yt-dlp
 python-dotenv
 aiosqlite
+pydantic
 
 isort
 black

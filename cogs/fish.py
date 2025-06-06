@@ -1,24 +1,79 @@
 import random
-from typing import Literal
+from typing import Dict, List, Literal, Optional
 
 import discord
 import tomllib
 from discord import app_commands
 from discord.ext import commands
+from pydantic import BaseModel
 
 from main import DiscordBot
 from utils.money import Money
 
 
-class Fish(commands.GroupCog):
+class Fish(BaseModel):
+    name: str
+    price: int
+    chance: float
+
+
+class Rod(BaseModel):
+    name: str
+    price: int
+    modifier: float
+
+
+class Bait(BaseModel):
+    name: str
+    price: int
+    modifier: float
+
+
+class FishingSettings(BaseModel):
+    base_catch_chance: float
+    fish: List[Fish]
+    rod: List[Rod]
+    bait: List[Bait]
+
+
+@app_commands.guild_only()
+class Fishing(commands.GroupCog, group_name="fish"):
     def __init__(self, bot: DiscordBot) -> None:
         self.bot = bot
         self.money = Money(bot.database)
 
         with open("config.toml", "rb") as f:
-            self.config = tomllib.load(f)["fishing"]
-            self.fishes = self.config["fish"]
-            self.catch_chance = self.config["catch_chance"]
+            raw: Dict = tomllib.load(f)["fishing"]
+            self.settings = FishingSettings(**raw)
+
+    async def cast_successful(
+        self, rod: Optional[Rod] = None, bait: Optional[Bait] = None
+    ) -> bool:
+        """Determine if the cast is successful. This is based on the base catch chance and if a bait was used."""
+
+        # Start with the base catch chance
+        catch_chance: float = self.settings.base_catch_chance
+        attempt: float = random.random()
+        print("----- CAST ATTEMPT -----")
+        print(f"Base catch chance: {catch_chance}")
+
+        # Add rod's catch chance
+        if rod:
+            catch_chance *= 1 + rod.modifier
+            print(f"Rod's catch chance: {rod.modifier}")
+            print(f"New catch chance: {catch_chance}")
+
+        # Add baits's catch chance
+        if bait:
+            catch_chance *= 1 + bait.modifier
+            print(f"Bait's catch chance: {bait.modifier}")
+            print(f"New catch chance: {catch_chance}")
+
+        print(f"Final catch chance: {catch_chance}")
+        print(f"Attempt: {attempt}")
+        print("------------------------\n")
+
+        return attempt <= catch_chance
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5.0, key=lambda i: (i.guild_id, i.user.id))
@@ -43,6 +98,7 @@ class Fish(commands.GroupCog):
             0
         ]
 
+        bait = None
         # Check if user wants to use bait and has any
         if use_bait:
             if bait_count <= 0:
@@ -56,6 +112,7 @@ class Fish(commands.GroupCog):
             self.bot.database.set_value(
                 user_id, guild_id, "fishing", "bait", new_bait_count
             )
+            bait = self.settings.bait[0]
         else:
             new_bait_count = bait_count
 
@@ -68,13 +125,13 @@ class Fish(commands.GroupCog):
         )
 
         # Determine if the cast was successful based on catch chance or bait
-        if use_bait or random.random() < self.catch_chance:
+        if await self.cast_successful(bait=bait):
             # Reset dry streak on successful catch
             self.bot.database.set_value(user_id, guild_id, "fishing", "streak", 0)
 
             # Select a random fish based on their chance weights
             random_fish = random.choices(
-                self.fishes, weights=[fish["chance"] for fish in self.fishes]
+                self.settings.fish, weights=[fish.chance for fish in self.settings.fish]
             )[0]
 
             # Update fishing statistics
@@ -87,7 +144,7 @@ class Fish(commands.GroupCog):
 
             # Calculate new fishing stats
             new_caught = caught + 1
-            new_revenue = revenue + random_fish["price"]
+            new_revenue = revenue + random_fish.price
 
             # Update fishing stats in database
             self.bot.database.set_value(
@@ -104,12 +161,12 @@ class Fish(commands.GroupCog):
             current_cookies, total_cookies, max_cookies = cookies_result
 
             # Calculate new cookie values
-            new_cookies = current_cookies + random_fish["price"]
-            new_total = total_cookies + random_fish["price"]
+            new_cookies = current_cookies + random_fish.price
+            new_total = total_cookies + random_fish.price
             new_max = max(max_cookies, new_cookies)
 
             # Update cookie stats in database
-            self.money.earn(user_id, guild_id, random_fish["price"])
+            self.money.earn(user_id, guild_id, random_fish.price)
 
             # Create success embed message
             embed = discord.Embed(
@@ -118,10 +175,10 @@ class Fish(commands.GroupCog):
             embed.set_image(
                 url="https://media1.tenor.com/m/ZHze27YyLIkAAAAC/joel-spinning.gif"
             )
-            embed.add_field(name="Type", value=random_fish["name"], inline=True)
+            embed.add_field(name="Type", value=random_fish.name, inline=True)
             embed.add_field(
                 name="Price",
-                value=f"{random_fish['price']} cookies",
+                value=f"{random_fish.price} cookies",
                 inline=True,
             )
             if use_bait:
@@ -268,4 +325,4 @@ class Fish(commands.GroupCog):
 
 
 async def setup(bot: DiscordBot) -> None:
-    await bot.add_cog(Fish(bot))
+    await bot.add_cog(Fishing(bot))
