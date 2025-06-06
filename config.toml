@@ -2,7 +2,7 @@
 [fishing]
 # Must be <= 1
 base_catch_chance = 0.25
-level_modifier = 0.10
+level_modifier = 0.01
 experience = 10           # How much experience (fish caught) needed to level up
 
 # Must add up to 100

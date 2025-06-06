@@ -56,7 +56,6 @@ class Fishing(commands.GroupCog, group_name="fish"):
 
     @app_commands.command()
     @app_commands.checks.cooldown(1, 5.0, key=lambda i: (i.guild_id, i.user.id))
-    @app_commands.describe(use_bait="Use bait to guarantee a catch")
     async def cast(self, interaction: discord.Interaction) -> None:
         """CAST! CAST! CAST!"""
 
@@ -72,9 +71,10 @@ class Fishing(commands.GroupCog, group_name="fish"):
 
         # Calculate catch chance
         attempt: float = random.random()
-        catch_chance: float = self.settings.base_catch_chance
+        catch_chance: float = self.settings.base_catch_chance * (
+            1 + (user_stats.level * self.settings.level_modifier)
+        )
         attempt_successful: bool = attempt <= catch_chance
-        # TO-DO: Integrate experience
 
         if attempt_successful:
             # Select random fish
@@ -86,7 +86,11 @@ class Fishing(commands.GroupCog, group_name="fish"):
             user_stats.total_fish_caught += 1
             user_stats.total_weight += fish.weight
             user_stats.total_value += fish.price
-            # TO-DO: Integrate level and experience
+            user_stats.experience += 1
+
+            if user_stats.experience == self.settings.experience:
+                user_stats.level += 1
+                user_stats.experience = 0
 
             # Create success embed message
             embed: discord.Embed = discord.Embed(
