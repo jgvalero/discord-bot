@@ -23,6 +23,13 @@ class Fishing(commands.GroupCog, group_name="fish"):
             raw: Dict = tomllib.load(f)["fishing"]
             return FishingSettings(**raw)
 
+    def _calculate_catch_chance(self, user_stats: FishingStats) -> float:
+        catch_chance: float = self.settings.base_catch_chance * (
+            1 + (user_stats.level * self.settings.level_modifier)
+        )
+
+        return catch_chance
+
     @app_commands.command()
     async def stats(self, interaction: discord.Interaction, member: discord.User):
         """Check a member's fishing stats!"""
@@ -51,6 +58,10 @@ class Fishing(commands.GroupCog, group_name="fish"):
         embed.add_field(name="Total Value", value=user_stats.total_value, inline=False)
         embed.add_field(name="Level", value=user_stats.level, inline=False)
         embed.add_field(name="Experience", value=user_stats.experience, inline=False)
+        embed.add_field(
+            name="Catch Chance",
+            value=f"{self._calculate_catch_chance(user_stats) * 100:.2f}%",
+        )
 
         await interaction.response.send_message(embed=embed)
 
@@ -71,10 +82,7 @@ class Fishing(commands.GroupCog, group_name="fish"):
 
         # Calculate catch chance
         attempt: float = random.random()
-        catch_chance: float = self.settings.base_catch_chance * (
-            1 + (user_stats.level * self.settings.level_modifier)
-        )
-        attempt_successful: bool = attempt <= catch_chance
+        attempt_successful: bool = attempt <= self._calculate_catch_chance(user_stats)
 
         if attempt_successful:
             # Select random fish
