@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Literal
+from typing import Dict
 
 import discord
 import tomllib
@@ -50,12 +50,16 @@ class Fishing(commands.GroupCog, group_name="fish"):
         )
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.add_field(
-            name="Total Fish Caught", value=user_stats.total_fish_caught, inline=False
+            name="Total Fish Caught",
+            value=f"{user_stats.total_fish_caught} fish",
+            inline=False,
         )
         embed.add_field(
-            name="Total Weight", value=user_stats.total_weight, inline=False
+            name="Total Weight", value=f"{user_stats.total_weight} pounds", inline=False
         )
-        embed.add_field(name="Total Value", value=user_stats.total_value, inline=False)
+        embed.add_field(
+            name="Total Value", value=f"{user_stats.total_value} cookies", inline=False
+        )
         embed.add_field(name="Level", value=user_stats.level, inline=False)
         embed.add_field(
             name="Experience",
@@ -102,7 +106,8 @@ class Fishing(commands.GroupCog, group_name="fish"):
 
             # Create success embed message
             embed: discord.Embed = discord.Embed(
-                title="You caught a fish!", color=discord.Color.green()
+                title=f"{interaction.user.display_name} caught a fish!",
+                color=discord.Color.green(),
             )
             embed.add_field(name="Type", value=fish.name, inline=False)
             embed.add_field(
@@ -133,92 +138,6 @@ class Fishing(commands.GroupCog, group_name="fish"):
             )
 
             await interaction.response.send_message(embed=embed)
-
-    @app_commands.command()
-    async def shop(self, interaction: discord.Interaction) -> None:
-        """Check shop prices!"""
-        embed = discord.Embed(
-            title="Big Dawg's Fishing Shop",
-            description="Buy items to improve your fishing! No refunds!",
-            color=discord.Color.blue(),
-        )
-
-        embed.add_field(
-            name="Big Dawg's Delectable Bait - 50 cookies",
-            value="Guarantees a catch on your next cast! Safe for human consumption!",
-            inline=False,
-        )
-
-        # Get user's current bait count
-        if interaction.guild:
-            bait_count = self.bot.database.get_value(
-                str(interaction.user.id),
-                str(interaction.guild.id),
-                "fishing",
-                "bait",
-            )[0]
-            embed.add_field(
-                name="Your Bait",
-                value=f"You currently have {bait_count} bait",
-                inline=False,
-            )
-
-        await interaction.response.send_message(embed=embed)
-
-    @app_commands.command()
-    @app_commands.describe(
-        item="Choose an item to buy", amount="How many items to buy (1-100)"
-    )
-    async def buy(
-        self,
-        interaction: discord.Interaction,
-        item: Literal["Big Dawg's Delectable Bait"],
-        amount: app_commands.Range[int, 1, 100] = 1,
-    ) -> None:
-        """Buy items from the shop!"""
-        if interaction.guild is None:
-            await interaction.response.send_message(
-                "This command can only be used in a server!", ephemeral=True
-            )
-            return
-
-        shop_items = {
-            "Big Dawg's Delectable Bait": {
-                "price": 50,
-                "name": "Bait",
-                "value": "bait",
-            }
-        }
-
-        if item not in shop_items:
-            await interaction.response.send_message(
-                "Invalid item! Use `/fish shop` to see available items.",
-                ephemeral=True,
-            )
-            return
-
-        item_data = shop_items[item]
-        total_cost = item_data["price"] * amount
-
-        user_id = str(interaction.user.id)
-        guild_id = str(interaction.guild.id)
-
-        if not self.money.lose(user_id, guild_id, total_cost):
-            return await interaction.response.send_message(
-                f"You don't have enough cookies! You need {total_cost} cookies, but you only have {self.money.get_money(user_id, guild_id)}.",
-                ephemeral=True,
-            )
-
-        current_bait = self.bot.database.get_value(
-            user_id, guild_id, "fishing", "bait"
-        )[0]
-        self.bot.database.set_value(
-            user_id, guild_id, "fishing", "bait", current_bait + amount
-        )
-
-        await interaction.response.send_message(
-            f"You just bought {amount} {item_data['name']} for {total_cost} cookies! You're not gonna regret it! You now have {self.money.get_money(user_id, guild_id)} cookies and {current_bait + amount} bait!"
-        )
 
     @cast.error
     async def on_cast_error(
