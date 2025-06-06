@@ -35,13 +35,11 @@ class Database:
                 CREATE TABLE IF NOT EXISTS fishing (
                     user_id INTEGER NOT NULL,
                     guild_id INTEGER NOT NULL,
-                    caught INTEGER DEFAULT 0,
-                    revenue INTEGER DEFAULT 0,
-                    streak INTEGER DEFAULT 0,
-                    longest_streak INTEGER DEFAULT 0,
-                    current_rod TEXT DEFAULT 'CastLite',
-                    bait INTEGER DEFAULT 0,
-                    attempts INTEGER DEFAULT 0,
+                    total_fish_caught INTEGER DEFAULT 0,
+                    total_weight INTEGER DEFAULT 0,
+                    total_value INTEGER DEFAULT 0,
+                    level INTEGER DEFAULT 0,
+                    experience INTEGER DEFAULT 0,
                     FOREIGN KEY (user_id, guild_id) REFERENCES users(user_id, guild_id)
                 );
                 """
@@ -60,7 +58,7 @@ class Database:
                 """
             )
 
-    def create_user(self, user_id: str, guild_id: str):
+    def create_user(self, user_id: int, guild_id: int):
         with self.conn:
             self.cursor.execute(
                 """
@@ -84,7 +82,7 @@ class Database:
                 (user_id, guild_id),
             )
 
-    def user_exists(self, user_id: str, guild_id: str) -> bool:
+    def user_exists(self, user_id: int, guild_id: int) -> bool:
         self.cursor.execute(
             """
             SELECT 1 FROM users WHERE user_id = ? AND guild_id = ?;
@@ -93,7 +91,7 @@ class Database:
         )
         return self.cursor.fetchone() is not None
 
-    def get_value(self, user_id: str, guild_id: str, table: str, column: str):
+    def get_value(self, user_id: int, guild_id: int, table: str, column: str):
         if not self.user_exists(user_id, guild_id):
             self.create_user(user_id, guild_id)
 
@@ -108,8 +106,8 @@ class Database:
 
     def set_value(
         self,
-        user_id: str,
-        guild_id: str,
+        user_id: int,
+        guild_id: int,
         table: str,
         column: str,
         value: str | int,

@@ -171,3 +171,4 @@ data/users.json
 data/users.db
 *.old
 data/fishes.json
+*.bak

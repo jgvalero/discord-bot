@@ -8,6 +8,7 @@ from discord.ext import commands
 from pydantic import BaseModel
 
 from main import DiscordBot
+from utils.database import Database
 from utils.money import Money
 
 
@@ -34,6 +35,71 @@ class FishingSettings(BaseModel):
     fish: List[Fish]
     rod: List[Rod]
     bait: List[Bait]
+
+
+class FishingStats:
+    def __init__(self, user_id: int, guild_id: int, database: Database):
+        self.user_id: int = user_id
+        self.guild_id: int = guild_id
+        self.database: Database = database
+
+    @property
+    def total_fish_caught(self) -> int:
+        return self.database.get_value(
+            self.user_id, self.guild_id, "fishing", "total_fish_caught"
+        )[0]
+
+    @total_fish_caught.setter
+    def total_fish_caught(self, value) -> None:
+        self.database.set_value(
+            self.user_id, self.guild_id, "fishing", "total_fish_caught", value
+        )
+
+    @property
+    def total_weight(self) -> int:
+        return self.database.get_value(
+            self.user_id, self.guild_id, "fishing", "total_weight"
+        )[0]
+
+    @total_weight.setter
+    def total_weight(self, value) -> None:
+        self.database.set_value(
+            self.user_id, self.guild_id, "fishing", "total_weight", value
+        )
+
+    @property
+    def total_value(self) -> int:
+        return self.database.get_value(
+            self.user_id, self.guild_id, "fishing", "total_value"
+        )[0]
+
+    @total_value.setter
+    def total_value(self, value) -> None:
+        self.database.set_value(
+            self.user_id, self.guild_id, "fishing", "total_value", value
+        )
+
+    @property
+    def level(self) -> int:
+        return self.database.get_value(self.user_id, self.guild_id, "fishing", "level")[
+            0
+        ]
+
+    @level.setter
+    def level(self, value) -> None:
+        self.database.set_value(self.user_id, self.guild_id, "fishing", "level", value)
+
+    @property
+    def experience(self) -> int:
+        return self.database.get_value(
+            self.user_id, self.guild_id, "fishing", "experience"
+        )[0]
+
+    @experience.setter
+    def experience(self, value) -> None:
+        self.database.set_value(
+            self.user_id, self.guild_id, "fishing", "experience", value
+        )
 
 
 @app_commands.guild_only()
@@ -76,6 +142,37 @@ class Fishing(commands.GroupCog, group_name="fish"):
         return attempt <= catch_chance
 
     @app_commands.command()
+    async def stats(self, interaction: discord.Interaction, member: discord.User):
+        """Check a member's fishing stats!"""
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        user_id = member.id
+        guild_id = interaction.guild.id
+        user_stats = FishingStats(user_id, guild_id, self.bot.database)
+
+        embed = discord.Embed(
+            title=f"{member.display_name}'s Fishing Stats!",
+            color=discord.Color.blue(),
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+
+        embed.add_field(
+            name="Total Fish Caught", value=user_stats.total_fish_caught, inline=False
+        )
+        embed.add_field(
+            name="Total Weight", value=user_stats.total_weight, inline=False
+        )
+        embed.add_field(name="Total Value", value=user_stats.total_value, inline=False)
+        embed.add_field(name="Level", value=user_stats.level, inline=False)
+        embed.add_field(name="Experience", value=user_stats.experience, inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
     @app_commands.checks.cooldown(1, 5.0, key=lambda i: (i.guild_id, i.user.id))
     @app_commands.describe(use_bait="Use bait to guarantee a catch")
     async def cast(
@@ -90,8 +187,14 @@ class Fishing(commands.GroupCog, group_name="fish"):
             return
 
         # Get user and guild IDs for database operations
-        user_id = str(interaction.user.id)
-        guild_id = str(interaction.guild.id)
+        user_id = interaction.user.id
+        guild_id = interaction.guild.id
+
+        user_stats: FishingStats = FishingStats(user_id, guild_id, self.bot.database)
+        print("Test")
+        print(user_stats.total_fish_caught)
+        user_stats.total_fish_caught = 5
+        print(user_stats.total_fish_caught)
 
         # Get current bait count
         bait_count = self.bot.database.get_value(user_id, guild_id, "fishing", "bait")[
