@@ -57,7 +57,11 @@ class Fishing(commands.GroupCog, group_name="fish"):
         )
         embed.add_field(name="Total Value", value=user_stats.total_value, inline=False)
         embed.add_field(name="Level", value=user_stats.level, inline=False)
-        embed.add_field(name="Experience", value=user_stats.experience, inline=False)
+        embed.add_field(
+            name="Experience",
+            value=f"{user_stats.experience}/{self.settings.experience}",
+            inline=False,
+        )
         embed.add_field(
             name="Catch Chance",
             value=f"{self._calculate_catch_chance(user_stats) * 100:.2f}%",
@@ -96,10 +100,6 @@ class Fishing(commands.GroupCog, group_name="fish"):
             user_stats.total_value += fish.price
             user_stats.experience += 1
 
-            if user_stats.experience == self.settings.experience:
-                user_stats.level += 1
-                user_stats.experience = 0
-
             # Create success embed message
             embed: discord.Embed = discord.Embed(
                 title="You caught a fish!", color=discord.Color.green()
@@ -108,13 +108,22 @@ class Fishing(commands.GroupCog, group_name="fish"):
             embed.add_field(
                 name="Weight",
                 value=f"{fish.weight} pounds",
-                inline=True,
+                inline=False,
             )
             embed.add_field(
                 name="Price",
                 value=f"{fish.price} cookies",
-                inline=True,
+                inline=False,
             )
+
+            if user_stats.experience == self.settings.experience:
+                user_stats.level += 1
+                user_stats.experience = 0
+                embed.add_field(
+                    name="Status",
+                    value=f"Leveled up! [{user_stats.level}]",
+                    inline=False,
+                )
 
             await interaction.response.send_message(embed=embed)
         else:
