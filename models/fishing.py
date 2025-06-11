@@ -8,8 +8,7 @@ from utils.database import Database
 class Fish(BaseModel):
     name: str
     weight: int
-    price: int
-    chance: float
+    rarity: str
 
 
 class Rod(BaseModel):
@@ -24,6 +23,12 @@ class Bait(BaseModel):
     modifier: float
 
 
+class Rarity(BaseModel):
+    name: str
+    probability: float
+    price: int
+
+
 class FishingSettings(BaseModel):
     base_catch_chance: float
     level_modifier: float
@@ -31,6 +36,7 @@ class FishingSettings(BaseModel):
     fish: List[Fish]
     rod: List[Rod]
     bait: List[Bait]
+    rarity: List[Rarity]
 
 
 class FishingStats:

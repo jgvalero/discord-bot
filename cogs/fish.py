@@ -1,5 +1,5 @@
 import random
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import discord
 import tomllib
@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from main import DiscordBot
-from models.fishing import Fish, FishingSettings, FishingStats
+from models.fishing import Fish, FishingSettings, FishingStats, Rarity
 from utils.money import Money
 
 
@@ -29,6 +29,59 @@ class Fishing(commands.GroupCog, group_name="fish"):
         )
 
         return catch_chance
+
+    def _choose_fish(self) -> Tuple[Fish, Rarity]:
+        rarity: Rarity = random.choices(
+            self.settings.rarity,
+            weights=[rarity.probability for rarity in self.settings.rarity],
+        )[0]
+
+        fishes: List[Fish] = []
+        for fish in self.settings.fish:
+            if fish.rarity == rarity.name:
+                fishes.append(fish)
+
+        return (random.choice(fishes), rarity)
+
+    @app_commands.command()
+    async def rarity(self, interaction: discord.Interaction):
+        """Shows the rarity types!"""
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        embed: discord.Embed = discord.Embed(
+            title="Fish Rarity", color=discord.Color.blue()
+        )
+
+        for rarity in self.settings.rarity:
+            value = f"Price: {rarity.price}\n"
+            value += f"Probability: {rarity.probability:.0%}"
+            embed.add_field(name=rarity.name, value=value, inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
+    async def fish(self, interaction: discord.Interaction):
+        """Shows the fishes!"""
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        embed: discord.Embed = discord.Embed(title="Fish", color=discord.Color.blue())
+
+        for fish in self.settings.fish:
+            value = f"Weight: {fish.weight} pounds\n"
+            value += f"Rarity: {fish.rarity}"
+            embed.add_field(name=fish.name, value=value, inline=False)
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     async def stats(self, interaction: discord.Interaction, member: discord.User):
@@ -93,15 +146,13 @@ class Fishing(commands.GroupCog, group_name="fish"):
         attempt_successful: bool = attempt <= self._calculate_catch_chance(user_stats)
 
         if attempt_successful:
-            # Select random fish
-            fish: Fish = random.choices(
-                self.settings.fish, weights=[fish.chance for fish in self.settings.fish]
-            )[0]
+            # Choose random fish
+            fish: Tuple[Fish, Rarity] = self._choose_fish()
 
             # Update stats
             user_stats.total_fish_caught += 1
-            user_stats.total_weight += fish.weight
-            user_stats.total_value += fish.price
+            user_stats.total_weight += fish[0].weight
+            user_stats.total_value += fish[1].price
             user_stats.experience += 1
 
             # Create success embed message
@@ -109,15 +160,20 @@ class Fishing(commands.GroupCog, group_name="fish"):
                 title=f"{interaction.user.display_name} caught a fish!",
                 color=discord.Color.green(),
             )
-            embed.add_field(name="Type", value=fish.name, inline=False)
+            embed.add_field(name="Type", value=fish[0].name, inline=False)
             embed.add_field(
                 name="Weight",
-                value=f"{fish.weight} pounds",
+                value=f"{fish[0].weight} pounds",
                 inline=False,
             )
             embed.add_field(
                 name="Price",
-                value=f"{fish.price} cookies",
+                value=f"{fish[1].price} cookies",
+                inline=False,
+            )
+            embed.add_field(
+                name="Rarity",
+                value=f"{fish[1].name}",
                 inline=False,
             )
 
