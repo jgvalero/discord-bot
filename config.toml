@@ -73,7 +73,7 @@ modifier = 0
 
 [[fishing.rod]]
 name = "Caster Lite"
-price = 0
+price = 1000
 modifier = 0.10
 
 [[fishing.bait]]

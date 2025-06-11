@@ -48,57 +48,63 @@ class FishingStats:
     @property
     def total_fish_caught(self) -> int:
         return self.database.get_value(
-            self.user_id, self.guild_id, "fishing", "total_fish_caught"
+            self.user_id, self.guild_id, "fishing_stats_core", "total_fish_caught"
         )[0]
 
     @total_fish_caught.setter
     def total_fish_caught(self, value) -> None:
         self.database.set_value(
-            self.user_id, self.guild_id, "fishing", "total_fish_caught", value
+            self.user_id,
+            self.guild_id,
+            "fishing_stats_core",
+            "total_fish_caught",
+            value,
         )
 
     @property
     def total_weight(self) -> int:
         return self.database.get_value(
-            self.user_id, self.guild_id, "fishing", "total_weight"
+            self.user_id, self.guild_id, "fishing_stats_core", "total_weight"
         )[0]
 
     @total_weight.setter
     def total_weight(self, value) -> None:
         self.database.set_value(
-            self.user_id, self.guild_id, "fishing", "total_weight", value
+            self.user_id, self.guild_id, "fishing_stats_core", "total_weight", value
         )
 
     @property
     def total_value(self) -> int:
         return self.database.get_value(
-            self.user_id, self.guild_id, "fishing", "total_value"
+            self.user_id, self.guild_id, "fishing_stats_core", "total_value"
         )[0]
 
     @total_value.setter
     def total_value(self, value) -> None:
         self.database.set_value(
-            self.user_id, self.guild_id, "fishing", "total_value", value
+            self.user_id, self.guild_id, "fishing_stats_core", "total_value", value
         )
 
     @property
     def level(self) -> int:
-        return self.database.get_value(self.user_id, self.guild_id, "fishing", "level")[
-            0
-        ]
+        return self.database.get_value(
+            self.user_id, self.guild_id, "fishing_stats_core", "level"
+        )[0]
 
     @level.setter
     def level(self, value) -> None:
-        self.database.set_value(self.user_id, self.guild_id, "fishing", "level", value)
+        self.database.set_value(
+            self.user_id, self.guild_id, "fishing_stats_core", "level", value
+        )
 
     @property
     def experience(self) -> int:
         return self.database.get_value(
-            self.user_id, self.guild_id, "fishing", "experience"
+            self.user_id, self.guild_id, "fishing_stats_core", "experience"
         )[0]
 
     @experience.setter
     def experience(self, value) -> None:
         self.database.set_value(
-            self.user_id, self.guild_id, "fishing", "experience", value
+            self.user_id, self.guild_id, "fishing_stats_core", "experience", value
         )
