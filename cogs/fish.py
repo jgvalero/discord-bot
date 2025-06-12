@@ -173,6 +173,7 @@ class Fishing(commands.GroupCog, group_name="fish"):
             user_stats.total_value += fish[1].price
             user_stats.experience += 1
             fish_stats.value += 1
+            self.money.earn(user_id, guild_id, fish[1].price)
 
             # Create success embed message
             embed: discord.Embed = discord.Embed(
