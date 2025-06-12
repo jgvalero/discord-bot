@@ -1,5 +1,5 @@
 import random
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import discord
 import tomllib
@@ -13,6 +13,7 @@ from models.fishing import (
     FishingStats,
     FishingStatsItems,
     Rarity,
+    Rod,
 )
 from utils.money import Money
 
@@ -29,10 +30,15 @@ class Fishing(commands.GroupCog, group_name="fish"):
             raw: Dict = tomllib.load(f)["fishing"]
             return FishingSettings(**raw)
 
-    def _calculate_catch_chance(self, user_stats: FishingStats) -> float:
+    def _calculate_catch_chance(
+        self, user_stats: FishingStats, rod: Optional[Rod] = None
+    ) -> float:
         catch_chance: float = self.settings.base_catch_chance * (
             1 + (user_stats.level * self.settings.level_modifier)
         )
+
+        if rod:
+            catch_chance *= 1 + rod.modifier
 
         return catch_chance
 
@@ -48,6 +54,31 @@ class Fishing(commands.GroupCog, group_name="fish"):
                 fishes.append(fish)
 
         return (random.choice(fishes), rarity)
+
+    def _get_current_rod(self, user_id: int, guild_id: int) -> Rod:
+        for rod in self.settings.rod:
+            item: FishingStatsItems = FishingStatsItems(
+                user_id,
+                guild_id,
+                self.bot.database,
+                "rod",
+                rod.name,
+                "owned",
+            )
+
+            if item.value == 2:
+                return rod
+
+        item: FishingStatsItems = FishingStatsItems(
+            user_id,
+            guild_id,
+            self.bot.database,
+            "rod",
+            self.settings.rod[0].name,
+            "owned",
+        )
+        item.value = 2
+        return self.settings.rod[0]
 
     @app_commands.command()
     async def rarity(self, interaction: discord.Interaction):
@@ -90,8 +121,8 @@ class Fishing(commands.GroupCog, group_name="fish"):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
-    async def rod(self, interaction: discord.Interaction):
-        """Shows the rods!"""
+    async def rod(self, interaction: discord.Interaction, select: Optional[int] = None):
+        """Shows the rods! You can also equip or buy them here!"""
 
         if interaction.guild is None:
             await interaction.response.send_message(
@@ -99,18 +130,69 @@ class Fishing(commands.GroupCog, group_name="fish"):
             )
             return
 
-        embed: discord.Embed = discord.Embed(title="Rods", color=discord.Color.blue())
+        user_id: int = interaction.user.id
+        guild_id: int = interaction.guild.id
 
-        for i, rod in enumerate(self.settings.rod):
-            value = f"Price: {rod.price} cookies\n"
-            value += f"Effect: Increases catch chance by {rod.modifier:.0%}"
+        if select:
+            for rod in self.settings.rod:
+                item: FishingStatsItems = FishingStatsItems(
+                    user_id,
+                    guild_id,
+                    self.bot.database,
+                    "rod",
+                    rod.name,
+                    "owned",
+                )
 
-            if i == 0:
-                embed.add_field(name=f"{rod.name} [Default]", value=value, inline=False)
+                if item.value == 2:
+                    item.value = 1
+
+            selected_rod: Rod = self.settings.rod[select - 1]
+            item: FishingStatsItems = FishingStatsItems(
+                user_id, guild_id, self.bot.database, "rod", selected_rod.name, "owned"
+            )
+
+            if item.value == 0:
+                if not self.money.lose(user_id, guild_id, selected_rod.price):
+                    return await interaction.response.send_message(
+                        f"You don't have enough cookies to buy the {selected_rod.name}!"
+                    )
+                else:
+                    item.value = 2
+                    return await interaction.response.send_message(
+                        f"You have purchased and equipped the {selected_rod.name} for {selected_rod.price} cookies!"
+                    )
             else:
-                embed.add_field(name=rod.name, value=value, inline=False)
+                item.value = 2
+                return await interaction.response.send_message(
+                    f"You have equipped the {selected_rod.name}!"
+                )
 
-        await interaction.response.send_message(embed=embed)
+        else:
+            embed: discord.Embed = discord.Embed(
+                title="Rods", color=discord.Color.blue()
+            )
+
+            for i, rod in enumerate(self.settings.rod):
+                value = f"Price: {rod.price} cookies\n"
+                value += f"Effect: Increases catch chance by {rod.modifier:.0%}"
+                field_name = f"{i + 1}. {rod.name}"
+
+                if i == 0:
+                    field_name += " [Default]"
+
+                item: FishingStatsItems = FishingStatsItems(
+                    user_id, guild_id, self.bot.database, "rod", rod.name, "owned"
+                )
+
+                if item.value == 2:
+                    field_name += " [Equipped]"
+                elif item.value == 1:
+                    field_name += " [Owned]"
+
+                embed.add_field(name=field_name, value=value, inline=False)
+
+            await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
     async def stats(self, interaction: discord.Interaction, member: discord.User):
@@ -125,6 +207,7 @@ class Fishing(commands.GroupCog, group_name="fish"):
         user_id: int = member.id
         guild_id: int = interaction.guild.id
         user_stats: FishingStats = FishingStats(user_id, guild_id, self.bot.database)
+        rod: Rod = self._get_current_rod(user_id, guild_id)
 
         embed: discord.Embed = discord.Embed(
             title=f"{member.display_name}'s Fishing Stats!",
@@ -150,7 +233,7 @@ class Fishing(commands.GroupCog, group_name="fish"):
         )
         embed.add_field(
             name="Catch Chance",
-            value=f"{self._calculate_catch_chance(user_stats) * 100:.2f}%",
+            value=f"{self._calculate_catch_chance(user_stats, rod) * 100:.2f}%",
         )
 
         fish_stats: str = ""
@@ -160,6 +243,8 @@ class Fishing(commands.GroupCog, group_name="fish"):
             )
             fish_stats += f"{fish.name}: {fish_item.value}\n"
         embed.add_field(name="Fish Caught", value=fish_stats, inline=False)
+
+        embed.add_field(name="Current Rod", value=rod.name, inline=False)
 
         await interaction.response.send_message(embed=embed)
 
@@ -180,7 +265,9 @@ class Fishing(commands.GroupCog, group_name="fish"):
 
         # Calculate catch chance
         attempt: float = random.random()
-        attempt_successful: bool = attempt <= self._calculate_catch_chance(user_stats)
+        attempt_successful: bool = attempt <= self._calculate_catch_chance(
+            user_stats, self._get_current_rod(user_id, guild_id)
+        )
 
         if attempt_successful:
             # Choose random fish
