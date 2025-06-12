@@ -1,38 +1,85 @@
 # ----- FISHING ----- #
 [fishing]
-# Must be <= 1
-catch_chance = 0.25
+base_catch_chance = 0.25
+level_modifier = 0.01
+experience = 10           # How much experience (fish caught) needed to level up
 
-# Must add up to 100
+[[fishing.rarity]]
+name = "Common"
+probability = 0.6
+price = 10
+
+[[fishing.rarity]]
+name = "Uncommon"
+probability = 0.25
+price = 100
+
+[[fishing.rarity]]
+name = "Rare"
+probability = 0.1
+price = 500
+
+[[fishing.rarity]]
+name = "Legendary"
+probability = 0.05
+price = 1000
+
 [[fishing.fish]]
 name = "Joel"
-price = 10
-chance = 50
+weight = 1
+rarity = "Common"
 
 [[fishing.fish]]
 name = "Ricardo"
-price = 50
-chance = 25
+weight = 5
+rarity = "Common"
 
 [[fishing.fish]]
 name = "Hector"
-price = 100
-chance = 15
+weight = 5
+rarity = "Uncommon"
 
 [[fishing.fish]]
 name = "Anna"
-price = 500
-chance = 5
+weight = 3
+rarity = "Uncommon"
 
 [[fishing.fish]]
 name = "Felix"
-price = 750
-chance = 4
+weight = 10
+rarity = "Rare"
 
 [[fishing.fish]]
 name = "Eduardo"
+weight = 10
+rarity = "Rare"
+
+[[fishing.fish]]
+name = "Dog"
+weight = 50
+rarity = "Legendary"
+
+[[fishing.fish]]
+name = "Cat"
+weight = 10
+rarity = "Legendary"
+
+
+# Modifiers are multiplicative (example: final_catch_chance = base_catch_chance * (1 + modifier))
+[[fishing.rod]]
+name = "Crusty, Rusty, & Dusty"
+price = 0
+modifier = 0
+
+[[fishing.rod]]
+name = "Caster Lite"
 price = 1000
-chance = 1
+modifier = 0.10
+
+[[fishing.bait]]
+name = "Worm"
+price = 1
+modifier = 0.10
 
 # ----- MODERATION ----- #
 [moderation]
