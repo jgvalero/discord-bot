@@ -7,7 +7,13 @@ from discord import app_commands
 from discord.ext import commands
 
 from main import DiscordBot
-from models.fishing import Fish, FishingSettings, FishingStats, Rarity
+from models.fishing import (
+    Fish,
+    FishingSettings,
+    FishingStats,
+    FishingStatsItems,
+    Rarity,
+)
 from utils.money import Money
 
 
@@ -149,11 +155,16 @@ class Fishing(commands.GroupCog, group_name="fish"):
             # Choose random fish
             fish: Tuple[Fish, Rarity] = self._choose_fish()
 
+            fish_stats: FishingStatsItems = FishingStatsItems(
+                user_id, guild_id, self.bot.database, "fish", fish[0].name, "caught"
+            )
+
             # Update stats
             user_stats.total_fish_caught += 1
             user_stats.total_weight += fish[0].weight
             user_stats.total_value += fish[1].price
             user_stats.experience += 1
+            fish_stats.value += 1
 
             # Create success embed message
             embed: discord.Embed = discord.Embed(

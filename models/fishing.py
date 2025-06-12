@@ -108,3 +108,71 @@ class FishingStats:
         self.database.set_value(
             self.user_id, self.guild_id, "fishing_stats_core", "experience", value
         )
+
+
+class FishingStatsItems:
+    def __init__(
+        self,
+        user_id: int,
+        guild_id: int,
+        database: Database,
+        item_type: str,
+        item_name: str,
+        stat_type: str,
+    ):
+        self.user_id: int = user_id
+        self.guild_id: int = guild_id
+        self.database: Database = database
+
+        self.item_type: str = item_type
+        self.item_name: str = item_name
+        self.stat_type: str = stat_type
+
+        with self.database.conn:
+            self.database.cursor.execute(
+                """
+                INSERT OR IGNORE INTO fishing_stats_items (user_id, guild_id, item_type, item_name, stat_type)
+                VALUES (?, ?, ?, ?, ?);
+                """,
+                (
+                    self.user_id,
+                    self.guild_id,
+                    self.item_type,
+                    self.item_name,
+                    self.stat_type,
+                ),
+            )
+
+    @property
+    def value(self) -> int:
+        with self.database.conn:
+            self.database.cursor.execute(
+                """
+                SELECT value FROM fishing_stats_items WHERE user_id = ? AND guild_id = ? AND item_type = ? AND item_name = ? AND stat_type = ?;
+                """,
+                (
+                    self.user_id,
+                    self.guild_id,
+                    self.item_type,
+                    self.item_name,
+                    self.stat_type,
+                ),
+            )
+        return self.database.cursor.fetchone()[0]
+
+    @value.setter
+    def value(self, value) -> None:
+        with self.database.conn:
+            self.database.cursor.execute(
+                """
+                UPDATE fishing_stats_items SET value = ? WHERE user_id = ? AND guild_id = ? AND item_type = ? AND item_name = ? AND stat_type = ?;
+                """,
+                (
+                    value,
+                    self.user_id,
+                    self.guild_id,
+                    self.item_type,
+                    self.item_name,
+                    self.stat_type,
+                ),
+            )

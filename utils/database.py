@@ -32,7 +32,7 @@ class Database:
             )
             self.cursor.execute(
                 """
-                CREATE TABLE IF NOT EXISTS fishing (
+                CREATE TABLE IF NOT EXISTS fishing_stats_core (
                     user_id INTEGER NOT NULL,
                     guild_id INTEGER NOT NULL,
                     total_fish_caught INTEGER DEFAULT 0,
@@ -40,6 +40,20 @@ class Database:
                     total_value INTEGER DEFAULT 0,
                     level INTEGER DEFAULT 0,
                     experience INTEGER DEFAULT 0,
+                    FOREIGN KEY (user_id, guild_id) REFERENCES users(user_id, guild_id)
+                );
+                """
+            )
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS fishing_stats_items (
+                    user_id INTEGER NOT NULL,
+                    guild_id INTEGER NOT NULL,
+                    item_type TEXT NOT NULL,
+                    item_name TEXT NOT NULL,
+                    stat_type TEXT NOT NULL,
+                    value INTEGER DEFAULT 0,
+                    PRIMARY KEY (user_id, guild_id, item_type, item_name, stat_type),
                     FOREIGN KEY (user_id, guild_id) REFERENCES users(user_id, guild_id)
                 );
                 """
@@ -69,7 +83,7 @@ class Database:
             )
             self.cursor.execute(
                 """
-                INSERT OR IGNORE INTO fishing (user_id, guild_id)
+                INSERT OR IGNORE INTO fishing_stats_core (user_id, guild_id)
                 VALUES (?, ?);
                 """,
                 (user_id, guild_id),
