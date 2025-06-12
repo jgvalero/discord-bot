@@ -65,7 +65,10 @@ weight = 10
 rarity = "Legendary"
 
 
-# Modifiers are multiplicative (example: final_catch_chance = base_catch_chance * (1 + modifier))
+# FISHING ROD MODIFIERS ARE MULTIPLICATIVE
+# FOR EXAMPLE: final_catch_chance = base_catch_chance * (1 + modifier))
+#                                 = 0.25 * (1 + 0.60)
+#                                 = 0.4
 [[fishing.rod]]
 name = "Crusty, Rusty, & Dusty"
 price = 0
@@ -74,7 +77,27 @@ modifier = 0
 [[fishing.rod]]
 name = "Caster Lite"
 price = 1000
-modifier = 0.10
+modifier = 0.20
+
+[[fishing.rod]]
+name = "Caster Standard"
+price = 2000
+modifier = 0.40
+
+[[fishing.rod]]
+name = "Caster Pro Max"
+price = 4000
+modifier = 0.60
+
+[[fishing.rod]]
+name = "Caster Ultra"
+price = 8000
+modifier = 0.80
+
+[[fishing.rod]]
+name = "Caster Master 3000"
+price = 16000
+modifier = 1.00
 
 [[fishing.bait]]
 name = "Worm"
