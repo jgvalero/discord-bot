@@ -90,6 +90,29 @@ class Fishing(commands.GroupCog, group_name="fish"):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
+    async def rod(self, interaction: discord.Interaction):
+        """Shows the rods!"""
+
+        if interaction.guild is None:
+            await interaction.response.send_message(
+                "This command can only be used in a server!", ephemeral=True
+            )
+            return
+
+        embed: discord.Embed = discord.Embed(title="Rods", color=discord.Color.blue())
+
+        for i, rod in enumerate(self.settings.rod):
+            value = f"Price: {rod.price} cookies\n"
+            value += f"Effect: Increases catch chance by {rod.modifier:.0%}"
+
+            if i == 0:
+                embed.add_field(name=f"{rod.name} [Default]", value=value, inline=False)
+            else:
+                embed.add_field(name=rod.name, value=value, inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command()
     async def stats(self, interaction: discord.Interaction, member: discord.User):
         """Check a member's fishing stats!"""
 
