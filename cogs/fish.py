@@ -130,6 +130,14 @@ class Fishing(commands.GroupCog, group_name="fish"):
             value=f"{self._calculate_catch_chance(user_stats) * 100:.2f}%",
         )
 
+        fish_stats: str = ""
+        for fish in self.settings.fish:
+            fish_item: FishingStatsItems = FishingStatsItems(
+                user_id, guild_id, self.bot.database, "fish", fish.name, "caught"
+            )
+            fish_stats += f"{fish.name}: {fish_item.value}\n"
+        embed.add_field(name="Fish Caught", value=fish_stats, inline=False)
+
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command()
